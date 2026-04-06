@@ -8,12 +8,12 @@ Este repositório serve como a raiz do meu ecossistema de projetos, integrando e
 
 O ecossistema é dividido em três pilares principais, cada um com seu próprio ciclo de vida e repositório:
 
-### 1. [Analytics Warehouse](warehouse/) (The Backbone)
+### 1. [Analytics Warehouse](data_warehouse/) (The Backbone)
 - **O que faz**: Ingestão, modelagem e anonimização de dados brutos.
 - **Tecnologias**: DuckDB, dbt, Python, SQL.
 - **Output**: Alimenta todos os dashboards e aplicações de negócio via camada *Gold*.
 
-### 2. [GeoMap SaaS](mapa_estabelecimentos/) (The Application)
+### 2. [GeoMap SaaS](mapa_saas/) (The Application)
 - **O que faz**: Ferramenta de *Location Intelligence* para redes de saúde com consultoria via IA integrada.
 - **Tecnologias**: Streamlit, Folium, Google Gemini AI.
 - **Deploy**: Pronto para **Streamlit Cloud**.

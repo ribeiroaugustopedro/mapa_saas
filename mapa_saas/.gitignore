@@ -29,11 +29,14 @@ ENV/
 # Streamlit
 .streamlit/secrets.toml
 
-# App Specific
+# App Specific - dados e arquivos gerados
+dataset/
 printscreens/*
 !printscreens/.gitkeep
 *.log
 map_temp_*.html
+*.db
+*.duckdb
 
 # OS
 .DS_Store
