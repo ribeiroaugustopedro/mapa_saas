@@ -1,0 +1,26 @@
+# Ambientes
+.venv/
+*/.venv/
+
+# Streamlit secrets
+.streamlit/secrets.toml
+
+# Bancos de dados
+*.db
+*.duckdb
+*.parquet
+
+# Python Cache
+__pycache__/
+*.pyc
+
+# Node Modules e Cache
+node_modules/
+dist/
+
+# Repositórios independentes (têm .git próprio)
+data_warehouse/
+site_portfolio/
+
+# Arquivos temporários
+tmp_out/
