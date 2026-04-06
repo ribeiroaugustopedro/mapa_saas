@@ -30,7 +30,7 @@ from modules.agent_ai import generate_data_summary, ask_agent
 
 st.set_page_config(layout="wide", page_title="Mapa Dinâmico")
 
-css_path = Path(".streamlit/style.css")
+css_path = Path(__file__).parent / ".streamlit" / "style.css"
 if css_path.exists():
     with open(css_path) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
