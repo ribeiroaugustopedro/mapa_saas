@@ -45,10 +45,25 @@
     font-family: var(--font-main) !important;
 }
 
+/* Force Full Width for the Map/Dashboard (Removes side white spaces in wide mode) */
+[data-testid="stMainBlockContainer"] {
+    max-width: 100% !important;
+    padding-top: 1rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1.5rem !important;
+    padding-bottom: 5rem !important;
+}
+
 /* === Sidebar Overhaul === */
 [data-testid="stSidebar"] {
     background-color: var(--bg-color) !important;
     border-right: 1px solid var(--border-color) !important;
+    padding-top: 0 !important;
+}
+
+/* Remove extra gap at the top of the Sidebar in recent Streamlit versions */
+[data-testid="stSidebarContent"] {
+    padding-top: 0 !important;
 }
 
 [data-testid="stSidebar"] h1, 
@@ -155,25 +170,44 @@ button[kind="secondary"]:hover {
     color: var(--text-primary) !important;
 }
 
+/* Update for modern stExpander structure */
 [data-testid="stExpander"] {
     background-color: var(--surface-color) !important;
     border: 1px solid var(--border-color) !important;
     border-radius: 8px !important;
     backdrop-filter: blur(10px);
+    margin-bottom: 10px !important;
 }
 
-[data-testid="stExpander"] summary p, 
+[data-testid="stExpander"] summary, 
 [data-testid="stExpander"] .streamlit-expanderHeader {
+    background-color: transparent !important;
     color: var(--text-primary) !important;
+    transition: background-color 0.2s ease;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-testid="stExpander"] summary p {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
 }
 
 [data-testid="stExpander"] svg {
     fill: var(--text-secondary) !important;
 }
 
+[data-testid="stExpanderDetailsContainer"] {
+    padding: 1.5rem 1rem !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
 /* === Tabs Overhaul: Remove orange marker === */
 [data-baseweb="tab-list"] {
     background-color: transparent !important;
+    gap: 10px;
 }
 
 [data-baseweb="tab-highlight"] {
@@ -184,11 +218,13 @@ button[kind="secondary"]:hover {
 
 [data-baseweb="tab"] {
     color: var(--text-secondary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
 }
 
 [data-baseweb="tab"][aria-selected="true"] {
     color: var(--text-primary) !important;
     font-weight: bold !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
 }
 
 /* === Dashboard Cards: Portfolio Project Card Match === */
