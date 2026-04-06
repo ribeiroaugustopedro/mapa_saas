@@ -107,7 +107,7 @@ def ask_agent(user_question, context_summary, history=[]):
     def call_gemini():
         client = genai.Client(api_key=api_key)
         return client.models.generate_content(
-            model='gemini-2.5-flash',
+            model='gemini-1.5-flash',
             contents=full_prompt
         )
 
