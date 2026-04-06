@@ -6,9 +6,9 @@
 .streamlit/secrets.toml
 
 # Bancos de dados
-*.db
-*.duckdb
-*.parquet
+# *.db
+# *.duckdb
+# *.parquet
 
 # Python Cache
 __pycache__/
