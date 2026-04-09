@@ -8,6 +8,7 @@ A professional location intelligence platform designed for strategic network man
 - **Optimal Point Simulation**: Algorithm-driven identification of strategic locations for network expansion based on portfolio density.
 - **AI Strategic Advisory**: Integration with Google Gemini for natural language data analysis and strategic insights.
 - **Density Analytics**: Heatmap visualizations reflecting customer concentration versus existing network infrastructure.
+- **Code Optimization**: Comprehensive cleanup of legacy artifacts and dev caches.
 
 ## Tech Stack
 - **Frontend**: Streamlit
