@@ -71,43 +71,28 @@ def ask_agent(user_question, context_summary, history=[]):
     try:
         genai.configure(api_key=api_key)
         
-        # Robust Model Selection: List available models to find the best match for current region/API
-        available_models = [m.name for m in genai.list_models() if "generateContent" in m.supported_generation_methods]
-        
-        # Priority order for free-tier performance
-        priority_models = [
-            "models/gemini-1.5-flash-latest",
-            "models/gemini-1.5-flash",
-            "models/gemini-1.5-flash-001",
-            "models/gemini-pro"
-        ]
-        
-        selected_model = None
-        for target in priority_models:
-            if target in available_models:
-                selected_model = target
-                break
-        
-        if not selected_model:
-            # Fallback to the first available model if priority list fails
-            selected_model = available_models[0] if available_models else "models/gemini-1.5-flash"
-
-        generation_config = {
-            "temperature": 0.2,
-            "top_p": 0.9,
-            "top_k": 32,
-            "max_output_tokens": 4096,
-        }
+        # Cache model selection to save API calls and quota
+        if "selected_model" not in st.session_state:
+            available_models = [m.name for m in genai.list_models() if "generateContent" in m.supported_generation_methods]
+            priority_models = [
+                "models/gemini-1.5-flash-latest",
+                "models/gemini-1.5-flash",
+                "models/gemini-pro"
+            ]
+            selected = None
+            for target in priority_models:
+                if target in available_models:
+                    selected = target
+                    break
+            st.session_state["selected_model"] = selected or (available_models[0] if available_models else "models/gemini-1.5-flash")
 
         model = genai.GenerativeModel(
-            model_name=selected_model,
-            generation_config=generation_config,
+            model_name=st.session_state["selected_model"],
             system_instruction=(
                 "You are the Strategic Network Director. "
                 "Tone: Highly professional, senior, executive, and analytical. "
                 "No emojis or emoticons allowed. "
-                "Use Title Case for your diagnostic sections: 'Situational Diagnosis', 'Critical Insights', 'Strategic Recommendations'. "
-                "Be precise, cite context data, and never invent metrics."
+                "Use Title Case for diagnostic sections. Be precise and cite context data."
             )
         )
 
@@ -125,9 +110,9 @@ def ask_agent(user_question, context_summary, history=[]):
         return response.text
         
     except Exception as e:
-        error_msg = str(e)
-        if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-            return "Quota Limit Reached: The free tier is currently at capacity. Please try again in 60 seconds."
-        if "API_KEY_INVALID" in error_msg:
-            return "Configuration Error: The provided Gemini API Key is invalid or expired."
-        return f"Strategic AI Engine Error: {error_msg}"
+        error_msg = str(e).upper()
+        if "429" in error_msg or "QUOTA" in error_msg or "EXHAUSTED" in error_msg:
+            return "Quota Limit Reached: The free tier is currently at capacity. Please wait 60 seconds."
+        if "API" in error_msg and "KEY" in error_msg and "INVALID" in error_msg:
+            return "Configuration Error: The Gemini API Key was rejected as invalid. Please check your secrets.toml."
+        return f"Strategic AI Engine Error: {str(e)}"
