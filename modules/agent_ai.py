@@ -12,7 +12,10 @@ def generate_data_summary(df_providers, df_members, simulation_results=None, ben
     summary.append(f"- **Active Layers**: {', '.join(map_modes) if map_modes else 'Markers Only'}")
     
     n_providers = len(df_providers)
-    n_members = df_members['member_id'].nunique() if 'member_id' in df_members.columns else len(df_members)
+    
+    # Standardized ID detection
+    col_id = 'user_id' if 'user_id' in df_members.columns else 'member_id' if 'member_id' in df_members.columns else None
+    n_members = df_members[col_id].nunique() if col_id else len(df_members)
     
     summary.append(f"### Overview")
     summary.append(f"- **Total Providers**: {n_providers}")
@@ -63,37 +66,41 @@ def ask_agent(user_question, context_summary, history=[]):
     api_key = configure_gemini()
     
     if not api_key:
-        return "Configuration Error: Gemini API key missing. Please check your environment variables or Streamlit secrets."
+        return "Configuration Error: Gemini API key missing. Please ensure GEMINI_API_KEY is set in environment variables or .streamlit/secrets.toml."
         
-    genai.configure(api_key=api_key)
-    
-    # 100% Free Version: Gemini 1.5 Flash
-    generation_config = {
-        "temperature": 0.3,
-        "top_p": 0.95,
-        "top_k": 40,
-        "max_output_tokens": 2048,
-    }
-
-    model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        generation_config=generation_config,
-        system_instruction=(
-            "You are the Strategic Network Director. "
-            "Tone: Highly professional, senior, executive, and analytical. "
-            "No emojis or emoticons allowed. "
-            "Use Title Case for your diagnostic sections: 'Situational Diagnosis', 'Critical Insights', 'Strategic Recommendations'. "
-            "Be precise, cite context data, and never invent metrics."
-        )
-    )
-
-    chat_history = []
-    for msg in history[-10:]:
-        role = "user" if msg["role"] == "user" else "model"
-        chat_history.append({"role": role, "parts": [msg["content"]]})
-
     try:
-        chat = model.start_chat(history=chat_history[:-1] if chat_history else None)
+        genai.configure(api_key=api_key)
+        
+        # 100% Free Version: Gemini 1.5 Flash (Latest)
+        generation_config = {
+            "temperature": 0.2,
+            "top_p": 0.9,
+            "top_k": 32,
+            "max_output_tokens": 4096,
+        }
+
+        # Using -latest to ensure compatibility with recent API changes
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash-latest",
+            generation_config=generation_config,
+            system_instruction=(
+                "You are the Strategic Network Director. "
+                "Tone: Highly professional, senior, executive, and analytical. "
+                "No emojis or emoticons allowed. "
+                "Use Title Case for your diagnostic sections: 'Situational Diagnosis', 'Critical Insights', 'Strategic Recommendations'. "
+                "Be precise, cite context data, and never invent metrics."
+            )
+        )
+
+        chat_history = []
+        for msg in history[-10:]:
+            role = "user" if msg["role"] == "user" else "model"
+            chat_history.append({"role": role, "parts": [msg["content"]]})
+
+        # Process chat
+        # Note: history in start_chat should not include the latest user prompt if we use send_message
+        valid_history = chat_history[:-1] if chat_history else None
+        chat = model.start_chat(history=valid_history)
         
         prompt = f"Data Context:\n{context_summary}\n\nExecutive Query: {user_question}"
         
@@ -102,6 +109,8 @@ def ask_agent(user_question, context_summary, history=[]):
         
     except Exception as e:
         error_msg = str(e)
+        if "404" in error_msg:
+            return "AI Configuration Error: Model 'gemini-1.5-flash' not found. This might be a temporary API availability issue or region restriction."
         if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-            return "Quota Limit Reached: Please wait a moment (429 Resource Exhausted)."
-        return f"AI Service Error: {error_msg}"
+            return "Quota Limit Reached: The free tier of Gemini 1.5 Flash is currently at capacity. Please try again in 60 seconds."
+        return f"Strategic AI Engine Error: {error_msg}"
