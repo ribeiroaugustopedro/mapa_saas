@@ -41,6 +41,10 @@ if "trigger_printscreen" not in st.session_state:
     st.session_state["trigger_printscreen"] = False
 if "last_capture_info" not in st.session_state:
     st.session_state["last_capture_info"] = None
+if "simulation_result" not in st.session_state:
+    st.session_state["simulation_result"] = None
+if "simulation_benchmark" not in st.session_state:
+    st.session_state["simulation_benchmark"] = None
 
 try:
     df_providers, df_members = get_data()
@@ -378,26 +382,47 @@ render_provider_dashboard(df_providers_filtered)
 
 
 with tab_ai:
-    st.markdown('<div class="ai-header"><h3>Strategic Advisory</h3></div>', unsafe_allow_html=True)
-    st.markdown('<div class="ai-subtitle">Advanced network analysis and strategic insights.</div>', unsafe_allow_html=True)
-
-    chat_container = st.container()
+    st.markdown('''
+        <div class="ai-header">
+            <div class="ai-icon-pulse"></div>
+            <h3 style="margin:0">Strategic Consulting AI</h3>
+        </div>
+        <div class="ai-subtitle">
+            Advanced neural engine specialized in healthcare network optimization and geospatial strategy. 
+            Ask about density gaps, expansion ROI, or competitor proximity.
+        </div>
+    ''', unsafe_allow_html=True)
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
-    with chat_container:
-        for message in st.session_state.messages:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
+    # Display Chat History
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-    if prompt := st.chat_input("How can I help with network strategy today?"):
+    # Strategic Suggestions (Chips)
+    st.markdown('<div style="margin-top: 1rem; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Suggested Analysis</div>', unsafe_allow_html=True)
+    
+    c1, c2 = st.columns(2)
+    sug_prompt = None
+    with c1:
+        if st.button("Expansion Strategy", use_container_width=True, help="Analyze the best regions for new clinics."):
+            sug_prompt = "Based on the current member density, where are the critical gaps where we should prioritize opening new specialty centers?"
+    with c2:
+        if st.button("Competitor Impact", use_container_width=True, help="Analyze network overlap."):
+            sug_prompt = "Analyze the current provider distribution. Are there areas with high member volume but low provider coverage (potential deserts)?"
+
+    # Handle Input
+    if prompt := (st.chat_input("How can I assist with your network strategy today?") or sug_prompt):
+        if sug_prompt: # If it came from a button, we append it to history first
+            prompt = sug_prompt
+            
         st.session_state.messages.append({"role": "user", "content": prompt})
-        with chat_container:
-            with st.chat_message("user"):
-                st.markdown(prompt)
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-        with st.spinner("Analyzing data..."):
+        with st.spinner("Neural Engine analyzing network patterns..."):
             data_context = generate_data_summary(
                 df_providers_filtered, 
                 df_members_filtered,
@@ -407,12 +432,14 @@ with tab_ai:
                 map_modes=map_modes
             )
             
-            response = ask_agent(
-                prompt,
-                data_context, 
-                history=st.session_state.messages
-            )
+            response = ask_agent(prompt, data_context, history=st.session_state.messages)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            
+            with st.chat_message("assistant"):
+                st.markdown(response)
+                st.rerun()
         
-    if st.button("Clear History", use_container_width=True):
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("Reset Conversation", use_container_width=True):
         st.session_state.messages = []
         st.rerun()

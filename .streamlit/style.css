@@ -337,23 +337,83 @@ header button::before, header button::after {
     min-height: 40px;
 }
 
-/* AI Chat Tweaks */
-[data-testid="stChatMessage"] {
-    background-color: transparent !important;
-}
-
-[data-testid="stChatMessage"]:has(div[aria-label="user"]) {
-    background-color: rgba(138, 43, 226, 0.05) !important;
-    border-radius: 12px !important;
-    border-left: 3px solid #8a2be2 !important;
-}
-
+/* AI Assistant & Chat Overhaul */
 .ai-header {
-    border-bottom: 1px solid var(--border-color) !important;
+    border-bottom: 2px solid var(--border-color) !important;
+    padding-bottom: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ai-icon-pulse {
+    width: 12px;
+    height: 12px;
+    background: var(--rainbow-gradient);
+    background-size: 200% auto;
+    animation: rainbowSlide 4s linear infinite, chatPulse 2s ease-in-out infinite;
+    border-radius: 50%;
+}
+
+@keyframes chatPulse {
+    0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.4); }
+    70% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 0 10px rgba(138, 43, 226, 0); }
+    100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(138, 43, 226, 0); }
 }
 
 .ai-subtitle {
+    font-size: 0.95rem !important;
     color: var(--text-secondary) !important;
+    margin-bottom: 2rem !important;
+    line-height: 1.6 !important;
+    font-style: italic;
+}
+
+[data-testid="stChatMessage"] {
+    background-color: var(--surface-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 1rem !important;
+    margin-bottom: 1rem !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    backdrop-filter: blur(10px) !important;
+    transition: transform 0.2s ease !important;
+}
+
+[data-testid="stChatMessage"]:hover {
+    transform: translateX(4px) !important;
+    border-color: #8a2be244 !important;
+}
+
+/* User Message Specific Accent */
+[data-testid="stChatMessage"]:has(div[aria-label="user chat message"]) {
+    border-left: 4px solid #8a2be2 !important;
+}
+
+/* Assistant Message Specific Accent */
+[data-testid="stChatMessage"]:has(div[aria-label="assistant chat message"]) {
+    border-left: 4px solid #ef4444 !important;
+}
+
+.chat-suggested-chip {
+    background-color: var(--surface-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 20px !important;
+    padding: 6px 16px !important;
+    font-size: 0.85rem !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    display: inline-block;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    color: var(--text-secondary) !important;
+}
+
+.chat-suggested-chip:hover {
+    border-color: #8a2be2 !important;
+    color: var(--text-primary) !important;
+    background-color: rgba(138, 43, 226, 0.05) !important;
 }
 
 /* Scrollbar styling */
