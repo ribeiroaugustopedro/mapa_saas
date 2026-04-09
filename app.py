@@ -60,185 +60,84 @@ if df_providers.empty:
 
 tab_filtros, tab_ai = st.sidebar.tabs(["Filters", "AI Assistant"])
 
+# --- Data Filtering Logic (Global Scope) ---
+df_providers_filtered = df_providers.copy()
+df_members_filtered = df_members.copy()
+
 with tab_filtros:
-    if st.button("Total Reset", use_container_width=True, help="Remove all filters and restore the map to its original state."):
+    if st.button("Total Reset", use_container_width=True, help="Remove all filters and restore the map."):
         for key in list(st.session_state.keys()):
             if key.startswith("sidebar_tab_") or key.startswith("expander_carteira_auto_"):
                 del st.session_state[key]
-                
-        reset_keys = [
-            "last_map_center", "last_map_zoom", "ping_location", 
-            "simulation_result", "simulation_benchmark", "trigger_simulation",
-            "provider_search", "map_mode", "radius_km", "map_theme", "is_locked",
-            "active_pin_click", "show_provider_markers", "cluster_markers"
-        ]
-        for k in reset_keys:
-            if k in st.session_state:
-                del st.session_state[k]
         st.rerun()
 
     with st.expander("Export & Style", expanded=False):
-        map_type = st.selectbox(
-            "Map Theme",
-            ["OpenStreetMap", "CartoDB positron", "CartoDB dark_matter"],
-            key="map_type"
-        )
-        locked_mode = st.toggle(
-            "Freeze Map (Print)",
-            value=False,
-            key="locked_mode",
-            help="Locks zoom and movement to facilitate clean static captures."
-        )
-            
-        if st.button("Capture View", use_container_width=True, help="Save an image of the current map view."):
+        map_theme = st.selectbox("Map Theme", ["OpenStreetMap", "CartoDB positron", "CartoDB dark_matter"], key="map_type")
+        locked_mode = st.toggle("Freeze Map (Print)", value=False, key="locked_mode")
+        if st.button("Capture View", use_container_width=True):
             st.session_state["trigger_printscreen"] = True
-            st.session_state["last_capture_info"] = None
-            
+            st.rerun()
+
         if st.session_state.get("last_capture_info"):
-            capture_info = st.session_state["last_capture_info"]
-            st.success("Map view captured!")
-            col_dl, col_cl = st.columns([3, 1])
-            with col_dl:
-                with open(capture_info["path"], "rb") as f:
-                    st.download_button(
-                        label=f"Download {capture_info['filename']}",
-                        data=f,
-                        file_name=capture_info["filename"],
-                        mime="image/png",
-                        use_container_width=True,
-                        key="dl_btn_final"
-                    )
-            with col_cl:
-                if st.button("Clear", use_container_width=True):
-                    st.session_state["last_capture_info"] = None
-                    st.rerun()
-            
+            ci = st.session_state["last_capture_info"]
+            st.success("Analysis captured!")
+            with open(ci["path"], "rb") as f:
+                st.download_button(f"Download {ci['filename']}", data=f, file_name=ci['filename'], use_container_width=True)
+            if st.button("Clear Capture", use_container_width=True):
+                st.session_state["last_capture_info"] = None
+                st.rerun()
+
     st.markdown("### Analysis")
-    
     if st.session_state["ping_location"]:
-        if st.button("Remove Pin", use_container_width=True, help="Removes the manual marker from the map."):
+        if st.button("Remove Manual Pin", use_container_width=True):
             st.session_state["ping_location"] = None
             st.rerun()
-    
-    map_modes = st.multiselect(
-        "Layers",
-        ["Heatmap (Member Portfolio)", "Coverage Radius"],
-        key="map_modes",
-        help="Add heatmaps or visualize coverage reach around providers."
-    )
-    
-    radius_km = st.slider("Radius (km)", 0, 20, 0, key="radius_km", help="Set the coverage radius (km) for proximity analysis.")
+    map_modes = st.multiselect("Layers", ["Heatmap (Member Portfolio)", "Coverage Radius"], key="map_modes")
+    radius_km = st.slider("Radius (km)", 0, 20, 0, key="radius_km")
     
     st.markdown("### Geo-Simulation")
-    sim_metric = st.selectbox(
-        "Metric",
-        ["Portfolio Volume"],
-        index=0,
-        key="sim_metric",
-        help="Select the metric for optimized point simulation."
-    )
-    
     col_meta1, col_meta2 = st.columns(2)
     with col_meta1:
-        if st.button("Search Optimized", use_container_width=True, help="Simulate the best location for a new provider."):
+        if st.button("Search Optimized", use_container_width=True):
             st.session_state["trigger_simulation"] = True
     with col_meta2:
         if st.button("Clear Results", use_container_width=True):
             st.session_state["simulation_result"] = None
-            st.session_state["simulation_benchmark"] = None
-            st.session_state["trigger_simulation"] = False
             st.rerun()
 
     st.markdown("---")
     st.markdown("### Provider Network")
+    st.toggle("Show Provider Pins", value=True, key="show_provider_markers")
+    st.toggle("Enable Clustering", value=True, key="cluster_markers")
+    st.toggle("Enable Manual Pin", value=False, key="manual_pin_enabled")
 
-    # Stack toggle switches to prevent sidebar wrapping
-    st.toggle(
-        "Show Provider Pins",
-        value=True,
-        key="show_provider_markers",
-        help="Display all filtered clinics/providers on the map."
-    )
-    st.toggle(
-        "Enable Clustering",
-        value=True,
-        key="cluster_markers",
-        help="Group nearby markers to keep the view clean."
-    )
-    st.toggle(
-        "Enable Manual Pin",
-        value=False,
-        key="manual_pin_enabled",
-        help="Clicking on the map places a strategic manual marker."
-    )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    busca_multi = []
+    # Network Filters
     if "prov_name" in df_providers.columns:
         opcoes_busca = sorted(df_providers["prov_name"].dropna().astype(str).unique())
-            
-        busca_multi = st.multiselect(
-            "Direct Search", 
-            options=opcoes_busca, 
-            placeholder="Type names...",
-            key="busca_prestador"
-        )
-
-    df_providers_cat_filtered = df_providers.copy()
+        busca_multi = st.multiselect("Direct Search", options=opcoes_busca, key="busca_prestador")
+    else:
+        busca_multi = []
 
     with st.expander("Network Filters", expanded=False):
         cfg_ignore_providers = ["prov_id", "loc_latitude", "loc_longitude", "loc_zip_code", "prov_name"]
-
         sidebar_config = detect_filter_columns(df_providers, ignored_columns=cfg_ignore_providers)
-        
-        for cfg in sidebar_config:
-            if cfg["col"] == "prov_tax_id":
-                cfg["label"] = "Registry Status"
-
-        df_providers_cat_filtered = generate_filters(
-            df_providers_cat_filtered,
-            st,
-            sidebar_config,
-            key_prefix="sidebar_tab"
-        )
+        df_providers_filtered = generate_filters(df_providers_filtered, st, sidebar_config, key_prefix="sidebar_tab")
 
     if busca_multi:
-        df_providers_name_filtered = df_providers[
-            df_providers["prov_name"].isin(busca_multi)
-        ]
-        
-        active_cat_filters = False
-        cat_cols = [c['col'] for c in sidebar_config]
-        for col in cat_cols:
-            key = f"sidebar_tab_{col}"
-            if key in st.session_state and st.session_state[key]:
-                active_cat_filters = True
-                break
-        
+        df_providers_name_filtered = df_providers[df_providers["prov_name"].isin(busca_multi)]
+        # Check for active categorical filters
+        active_cat_filters = any(st.session_state.get(f"sidebar_tab_{c['col']}") for c in sidebar_config)
         if active_cat_filters:
-            df_providers_filtered = pd.concat([df_providers_cat_filtered, df_providers_name_filtered]).drop_duplicates(subset=["prov_id"])
+            df_providers_filtered = pd.concat([df_providers_filtered, df_providers_name_filtered]).drop_duplicates(subset=["prov_id"])
         else:
             df_providers_filtered = df_providers_name_filtered
-    else:
-        df_providers_filtered = df_providers_cat_filtered
 
     st.markdown("---")
     st.markdown("### Customer Base Filters")
-
     with st.expander("Portfolio Attributes", expanded=False):
         IGNORE_MEMBERS = ["member_id", "loc_zip_code", "loc_latitude", "loc_longitude"]
         config_members = detect_filter_columns(df_members, ignored_columns=IGNORE_MEMBERS)
-        config_members.sort(key=lambda x: x["label"])
-
-        df_members_filtered = df_members.copy()
-        
-        df_members_filtered = generate_filters(
-            df_members_filtered,
-            st,
-            config_members,
-            key_prefix="expander_members_auto"
-        )
+        df_members_filtered = generate_filters(df_members_filtered, st, config_members, key_prefix="expander_members_auto")
 
 # Helper for consistent map layer application
 def apply_map_layers(m_obj, providers_df, members_df, show_h=False, show_m=True, show_r=False, cluster_m=True, rad=0, ping_loc=None, best_pt=None):

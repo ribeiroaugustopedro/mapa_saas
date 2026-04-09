@@ -59,6 +59,8 @@
     background-color: var(--bg-color) !important;
     border-right: 1px solid var(--border-color) !important;
     padding-top: 0 !important;
+    min-width: 420px !important;
+    max-width: 420px !important;
 }
 
 /* Remove extra gap at the top of the Sidebar in recent Streamlit versions */
@@ -379,6 +381,7 @@ header button::before, header button::after {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     backdrop-filter: blur(10px) !important;
     transition: transform 0.2s ease !important;
+    width: 100% !important;
 }
 
 [data-testid="stChatMessage"]:hover {
