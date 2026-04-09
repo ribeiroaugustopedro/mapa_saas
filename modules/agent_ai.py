@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 import os
 import google.generativeai as genai
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception
 
 def generate_data_summary(df_providers, df_members, simulation_results=None, benchmark_sim=None, radius_km=5, map_modes=[]):
     summary = []
