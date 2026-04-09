@@ -167,8 +167,10 @@ def detect_filter_columns(
         if df[col].isnull().all():
             continue
 
-        dtype_str = str(df[col].dtype)
-        if not ("object" in dtype_str or "string" in dtype_str or "category" in dtype_str):
+        dtype_str = str(df[col].dtype).lower()
+        # Accept almost any non-numeric type as a candidate for categorical filter
+        is_numeric = any(t in dtype_str for t in ["int", "float", "double", "decimal"])
+        if is_numeric and df[col].nunique() > 20: # Skip numeric-looking IDs or heavy values
             continue
             
         sample_data = df[col].dropna().astype(str)

@@ -57,12 +57,17 @@ if df_providers.empty:
     st.warning("Data not loaded. Please check files in 'dataset' folder.")
     st.stop()
 
+# --- Data Initialization & Filter Discovery ---
+cfg_ignore_providers = ["prov_id", "loc_latitude", "loc_longitude", "loc_zip_code", "prov_name"]
+sidebar_config = detect_filter_columns(df_providers, ignored_columns=cfg_ignore_providers)
 
-tab_filtros, tab_ai = st.sidebar.tabs(["Filters", "AI Assistant"])
+IGNORE_MEMBERS = ["member_id", "loc_zip_code", "loc_latitude", "loc_longitude"]
+config_members = detect_filter_columns(df_members, ignored_columns=IGNORE_MEMBERS)
 
-# --- Data Filtering Logic (Global Scope) ---
 df_providers_filtered = df_providers.copy()
 df_members_filtered = df_members.copy()
+
+tab_filtros, tab_ai = st.sidebar.tabs(["Filters", "AI Assistant"])
 
 with tab_filtros:
     if st.button("Total Reset", use_container_width=True, help="Remove all filters and restore the map."):
@@ -119,8 +124,6 @@ with tab_filtros:
         busca_multi = []
 
     with st.expander("Network Filters", expanded=False):
-        cfg_ignore_providers = ["prov_id", "loc_latitude", "loc_longitude", "loc_zip_code", "prov_name"]
-        sidebar_config = detect_filter_columns(df_providers, ignored_columns=cfg_ignore_providers)
         df_providers_filtered = generate_filters(df_providers_filtered, st, sidebar_config, key_prefix="sidebar_tab")
 
     if busca_multi:
@@ -135,8 +138,6 @@ with tab_filtros:
     st.markdown("---")
     st.markdown("### Customer Base Filters")
     with st.expander("Portfolio Attributes", expanded=False):
-        IGNORE_MEMBERS = ["member_id", "loc_zip_code", "loc_latitude", "loc_longitude"]
-        config_members = detect_filter_columns(df_members, ignored_columns=IGNORE_MEMBERS)
         df_members_filtered = generate_filters(df_members_filtered, st, config_members, key_prefix="expander_members_auto")
 
 # Helper for consistent map layer application
