@@ -72,7 +72,7 @@ with tab_filtros:
         st.rerun()
 
     with st.expander("Export & Style", expanded=False):
-        map_theme = st.selectbox("Map Theme", ["OpenStreetMap", "CartoDB positron", "CartoDB dark_matter"], key="map_type")
+        map_type = st.selectbox("Map Theme", ["OpenStreetMap", "CartoDB positron", "CartoDB dark_matter"], key="map_type")
         locked_mode = st.toggle("Freeze Map (Print)", value=False, key="locked_mode")
         if st.button("Capture View", use_container_width=True):
             st.session_state["trigger_printscreen"] = True
