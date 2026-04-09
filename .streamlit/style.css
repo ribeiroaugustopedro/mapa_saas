@@ -1,0 +1,364 @@
+:root {
+  --rainbow-gradient: linear-gradient(90deg, #ff0000, #ff8c00, #ffd700, #00ff00, #00ffff, #0000ff, #8a2be2, #ff00ff, #ff0000);
+  --font-main: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "Fira Code", "Courier New", monospace;
+}
+
+/* === Theme Variables Mapping === */
+[data-theme="dark"] {
+  --bg-color: #0d1117;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --surface-color: #161b22;
+  --border-color: #30363d;
+  --bg-glow: radial-gradient(at 0% 0%, rgba(255, 0, 0, 0.08) 0px, transparent 50%),
+             radial-gradient(at 100% 100%, rgba(138, 43, 226, 0.08) 0px, transparent 50%);
+}
+
+[data-theme="light"] {
+  --bg-color: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --surface-color: #ffffff;
+  --border-color: #e2e8f0;
+  --bg-glow: radial-gradient(at 0% 0%, rgba(255, 0, 0, 0.03) 0px, transparent 50%),
+             radial-gradient(at 100% 100%, rgba(138, 43, 226, 0.03) 0px, transparent 50%);
+}
+
+/* === Core Animations === */
+@keyframes rainbowGradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes rainbowSlide {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 200% 0%; }
+}
+
+/* === Global App Styling === */
+.stApp {
+    background-color: var(--bg-color) !important;
+    background-image: var(--bg-glow) !important;
+    background-attachment: fixed !important;
+    color: var(--text-primary) !important;
+    font-family: var(--font-main) !important;
+}
+
+/* Force Full Width for the Map/Dashboard (Removes side white spaces in wide mode) */
+[data-testid="stMainBlockContainer"] {
+    max-width: 100% !important;
+    padding-top: 6rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1.5rem !important;
+    padding-bottom: 5rem !important;
+}
+
+/* === Sidebar Overhaul === */
+[data-testid="stSidebar"] {
+    background-color: var(--bg-color) !important;
+    border-right: 1px solid var(--border-color) !important;
+    padding-top: 0 !important;
+}
+
+/* Remove extra gap at the top of the Sidebar in recent Streamlit versions */
+[data-testid="stSidebarContent"] {
+    padding-top: 0 !important;
+}
+
+[data-testid="stSidebar"] h1, 
+[data-testid="stSidebar"] h2, 
+[data-testid="stSidebar"] h3 {
+    color: var(--text-primary) !important;
+    font-family: var(--font-main) !important;
+    font-weight: 600 !important;
+}
+
+[data-testid="stSidebar"] hr {
+    border-color: var(--border-color) !important;
+}
+
+/* Rainbow top bar on Header */
+header[data-testid="stHeader"]::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--rainbow-gradient);
+    background-size: 200% auto;
+    animation: rainbowSlide 4s linear infinite;
+    z-index: 999999;
+}
+
+/* === Buttons: Portfolio Style === */
+
+/* Clean Buttons - Default */
+button {
+  background-color: var(--surface-color) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+/* Sidebar App Buttons: Rainbow Contour RESTORED */
+[data-testid="stSidebar"] button:not([role="tab"]):not([data-testid="stBaseButton-headerNoContent"]) {
+  position: relative !important;
+  z-index: 1 !important;
+  overflow: visible !important;
+}
+
+[data-testid="stSidebar"] button:not([role="tab"]):not([data-testid="stBaseButton-headerNoContent"])::before {
+  content: "";
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  background: var(--rainbow-gradient);
+  background-size: 200% auto;
+  animation: rainbowSlide 4s linear infinite;
+  border-radius: 10px;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  display: block !important; /* Ensure it stays visible here */
+}
+
+[data-testid="stSidebar"] button:not([role="tab"]):not([data-testid="stBaseButton-headerNoContent"]):hover::before {
+  opacity: 1;
+}
+
+[data-testid="stSidebar"] button:not([role="tab"]):hover {
+  border-color: transparent !important;
+}
+
+/* Specific Header & Tab cleanup */
+[role="tab"]::before, [role="tab"]::after,
+header button::before, header button::after {
+  display: none !important;
+}
+
+/* === Toggles & Sliders (Standard Overrides) === */
+
+/* Chart Dynamic Rainbow Effect */
+@keyframes rainbowHue {
+  from { filter: hue-rotate(0deg); }
+  to { filter: hue-rotate(360deg); }
+}
+
+[data-testid="stAltairChart"] svg path,
+[data-testid="stAltairChart"] svg rect {
+    animation: rainbowHue 10s linear infinite !important;
+}
+
+/* Multiselect Selected Chips (Tags) - FORCE RAINBOW */
+[data-testid="stTag"], 
+[data-baseweb="tag"],
+.stMultiSelect div[data-testid="stTag"],
+.stMultiSelect span[data-baseweb="tag"] {
+    background: var(--rainbow-gradient) !important;
+    background-size: 200% auto !important;
+    animation: rainbowSlide 4s linear infinite !important;
+    border-radius: 6px !important;
+    border: none !important;
+    color: white !important;
+    padding: 2px 8px !important;
+}
+
+[data-testid="stTag"] span, 
+[data-testid="stTag"] font,
+[data-baseweb="tag"] span {
+    color: white !important;
+    font-weight: 700 !important;
+}
+
+[data-testid="stTag"] button svg,
+[data-baseweb="tag"] button svg {
+    fill: white !important;
+}
+
+/* Toggle Switch - Target background when active */
+[data-testid="stToggle"] [role="switch"][aria-checked="true"] {
+    background-color: #ef4444 !important; /* Clean Red for active */
+}
+
+/* Remove all other track hacks to restore default orange/red line */
+[data-testid="stSlider"] div[data-testid="stThumbValue"] {
+    color: #ef4444 !important;
+    font-weight: 700 !important;
+}
+
+.stSlider div[data-testid="stThumbValue"] {
+    color: var(--text-primary) !important;
+    font-family: var(--font-main) !important;
+}
+
+/* === Forms & Inputs === */
+[data-baseweb="select"] > div, 
+[data-baseweb="base-input"],
+.stTextArea textarea {
+    background-color: var(--surface-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    color: var(--text-primary) !important;
+}
+
+/* Update for modern stExpander structure with Rainbow focus */
+[data-testid="stExpander"] {
+    background-color: var(--surface-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 8px !important;
+    backdrop-filter: blur(10px);
+    margin-bottom: 12px !important;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
+}
+
+[data-testid="stExpander"]:hover,
+[data-testid="stExpander"][aria-expanded="true"] {
+    border-color: var(--border-color) !important;
+}
+
+/* Specific Target for Rainbow Filters: Portfolio Attributes & Network Filters */
+[data-testid="stExpander"] summary:hover,
+[data-testid="stExpander"][aria-expanded="true"] summary,
+[data-testid="stExpander"] .streamlit-expanderHeader:hover,
+[data-testid="stExpander"] .streamlit-expanderHeader[aria-expanded="true"] {
+    background: var(--rainbow-gradient) !important;
+    background-size: 200% auto !important;
+    animation: rainbowSlide 4s linear infinite !important;
+    color: white !important;
+}
+
+[data-testid="stExpander"] summary:hover *,
+[data-testid="stExpander"][aria-expanded="true"] summary * {
+    color: white !important;
+    font-weight: 700 !important;
+}
+
+[data-testid="stExpander"] summary, 
+[data-testid="stExpander"] .streamlit-expanderHeader {
+    background-color: transparent !important;
+    color: var(--text-primary) !important;
+    transition: background-color 0.2s ease;
+}
+
+[data-testid="stExpander"] summary:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+[data-testid="stExpander"] summary p {
+    color: var(--text-primary) !important;
+    font-weight: 500 !important;
+}
+
+[data-testid="stExpander"] svg {
+    fill: var(--text-secondary) !important;
+}
+
+[data-testid="stExpanderDetailsContainer"] {
+    padding: 1.5rem 1rem !important;
+    border-top: 1px solid var(--border-color) !important;
+}
+
+/* === Tabs Overhaul: Remove orange marker === */
+[data-baseweb="tab-list"] {
+    background-color: transparent !important;
+    gap: 10px;
+}
+
+[data-baseweb="tab-highlight"] {
+    background: var(--rainbow-gradient) !important;
+    background-size: 200% auto !important;
+    animation: rainbowSlide 4s linear infinite !important;
+}
+
+[data-baseweb="tab"] {
+    color: var(--text-secondary) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+[data-baseweb="tab"][aria-selected="true"] {
+    color: var(--text-primary) !important;
+    font-weight: bold !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* === Dashboard Cards: Portfolio Project Card Match === */
+.dashboard-card {
+  background-color: var(--surface-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 8px !important;
+  padding: 24px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 140px;
+  backdrop-filter: blur(10px);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px) !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(138, 43, 226, 0.4) !important;
+}
+
+.card-title {
+  color: var(--text-secondary) !important;
+  font-family: var(--font-main) !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  margin-bottom: 12px !important;
+}
+
+.card-value {
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+    margin-bottom: 4px !important;
+}
+
+/* Rainbow text utility for specific values */
+.rainbow-text {
+  color: var(--text-primary) !important;
+  font-weight: bold;
+}
+
+.rainbow-text-simple {
+  color: var(--text-primary) !important;
+  font-weight: bold;
+}
+
+.card-value-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 40px;
+}
+
+/* AI Chat Tweaks */
+[data-testid="stChatMessage"] {
+    background-color: transparent !important;
+}
+
+[data-testid="stChatMessage"]:has(div[aria-label="user"]) {
+    background-color: rgba(138, 43, 226, 0.05) !important;
+    border-radius: 12px !important;
+    border-left: 3px solid #8a2be2 !important;
+}
+
+.ai-header {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.ai-subtitle {
+    color: var(--text-secondary) !important;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-color); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+

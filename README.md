@@ -1,44 +1,40 @@
-# Pedro Augusto Ribeiro - Data & Software Ecosystem
+# GeoMap SaaS - Geospatial Network Intelligence
 
-Este repositório serve como a raiz do meu ecossistema de projetos, integrando engenharia de dados, inteligência artificial e interfaces web de alta performance.
-
----
-
-## 🏛️ Arquitetura do Hub (Medallion)
-
-O ecossistema é dividido em três pilares principais, cada um com seu próprio ciclo de vida e repositório:
-
-### 1. [Analytics Warehouse](data_warehouse/) (The Backbone)
-- **O que faz**: Ingestão, modelagem e anonimização de dados brutos.
-- **Tecnologias**: DuckDB, dbt, Python, SQL.
-- **Output**: Alimenta todos os dashboards e aplicações de negócio via camada *Gold*.
-
-### 2. [GeoMap SaaS](mapa_saas/) (The Application)
-- **O que faz**: Ferramenta de *Location Intelligence* para redes de saúde com consultoria via IA integrada.
-- **Tecnologias**: Streamlit, Folium, Google Gemini AI.
-- **Deploy**: Pronto para **Streamlit Cloud**.
-
-### 3. [Site Portfolio](site_portfolio/) (The Showcase)
-- **O que faz**: Meu portfólio profissional e hub de projetos ao vivo.
-- **Tecnologias**: Vite, React, Three.js.
-- **Deploy**: Hospedado em **paribeiro.com** via GitHub Pages.
+A robust **Location Intelligence** platform designed for strategic healthcare network management. GeoMap integrates member data analysis, provider mapping, and geospatial optimization algorithms into a modern, minimalist interface inspired by a high-end professional portfolio.
 
 ---
 
-## 🗺️ Roadmap de Integrações Futuras
+## 🎨 Visual Identity & UX
+GeoMap was developed with a focus on a premium **User Experience (UX)**:
+- **Native Dark Mode**: Interface optimized for readability and modern aesthetics.
+- **Glassmorphism**: Components featuring transparency and background blur.
+- **Rainbow Micro-Animations**: Rainbow gradient effects on Call-to-Action (CTA) buttons and toggles, ensuring a vibrant and interactive interface.
 
-- [ ] **SQL on Web**: Implementar DuckDB-WASM no portfólio para consultas SQL interativas pelo usuário final.
-- [ ] **API de Dados**: Migrar o warehouse para uma API unificada que sirva múltiplos front-ends.
-- [ ] **Novos Dashboards**: Projetos de análise financeira e logística integrados ao core do warehouse.
+## 🛠️ Core Features
+- **Dynamic Exploration**: Intelligent filters that maintain map state without resetting the view.
+- **Additive Search**: Search for provider names that are added to the filtered view.
+- **Optimal Point Simulation ("Goal Seeking")**: Algorithm that identifies the best location for network expansion based on member density.
+- **AI Assistant (GenAI)**: Integration with **Google Gemini 1.5 Pro/Flash** for scenario analysis and strategic consulting in natural language.
+- **Density Heatmaps**: Clear visualization of customer concentration vs. network coverage.
+
+## 🚀 How to Run (Local)
+1. Ensure you have Python 3.10+ installed.
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Run the application:
+   ```bash
+   streamlit run app.py
+   ```
+
+## 📦 Data Architecture
+The project utilizes a modular data pipeline:
+- **Source**: Data ingestion via local DuckDB (Gold layer).
+- **Backend**: Python + Streamlit.
+- **Map**: Folium with Leaflet.js extensions.
+- **Intelligence**: Google Generative AI (Gemini SDK).
 
 ---
-
-## 🛠️ Como Iniciar
-Cada projeto possui seu próprio ambiente isolado (`.venv`). Para rodar qualquer um:
-1. Navegue até a pasta do projeto.
-2. Crie ou ative a `.venv` local.
-3. Instale as dependências via `pip install -r requirements.txt` ou `npm install`.
-
----
-> [!NOTE]
-> Este workspace reflete um compromisso com a escalabilidade, segurança de dados e excelência técnica em todas as camadas da aplicação.
+> [!TIP]
+> To host on **Streamlit Cloud**, ensure you configure the Gemini API Key in `.streamlit/secrets.toml`.

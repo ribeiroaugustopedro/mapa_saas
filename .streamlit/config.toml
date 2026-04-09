@@ -1,3 +1,6 @@
+[server]
+runOnSave = true
+
 [theme]
 primaryColor = "#64ffda"
 backgroundColor = "#0d1117"

@@ -1,26 +1,43 @@
-# Ambientes
-.venv/
-*/.venv/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Streamlit secrets
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Streamlit
 .streamlit/secrets.toml
 
-# Bancos de dados
+# App Specific - dados e arquivos gerados
+# dataset/
+printscreens/*
+!printscreens/.gitkeep
+*.log
+map_temp_*.html
 # *.db
 # *.duckdb
-# *.parquet
 
-# Python Cache
-__pycache__/
-*.pyc
-
-# Node Modules e Cache
-node_modules/
-dist/
-
-# Repositórios independentes (têm .git próprio)
-data_warehouse/
-site_portfolio/
-
-# Arquivos temporários
-tmp_out/
+# OS
+.DS_Store
+Thumbs.db

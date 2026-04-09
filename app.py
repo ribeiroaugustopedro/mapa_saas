@@ -1,0 +1,418 @@
+import streamlit as st
+import pandas as pd
+from pathlib import Path
+import datetime
+import json
+import os
+
+from modules.data import get_data
+from modules.utils import (
+    generate_filters, detect_filter_columns, find_optimal_point, 
+    save_map_as_image
+)
+from modules.map_builder import (
+    create_base_map, 
+    add_provider_markers, 
+    add_heatmap, 
+    render_map,
+    add_ping_marker,
+    add_simulation_marker
+)
+from modules.dashboard import (
+    render_member_dashboard, 
+    render_provider_dashboard,
+    calculate_member_count_in_radius, 
+    calculate_full_point_metrics,
+    identify_nearby_region
+)
+from modules.agent_ai import generate_data_summary, ask_agent
+
+
+st.set_page_config(layout="wide", page_title="Network Map")
+
+css_path = Path(__file__).parent / ".streamlit" / "style.css"
+if css_path.exists():
+    with open(css_path) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+if "ping_location" not in st.session_state:
+    st.session_state["ping_location"] = None
+if "trigger_printscreen" not in st.session_state:
+    st.session_state["trigger_printscreen"] = False
+if "last_capture_info" not in st.session_state:
+    st.session_state["last_capture_info"] = None
+
+try:
+    df_providers, df_members = get_data()
+except Exception as e:
+    st.error(f"Error loading base data: {str(e)}")
+    df_providers, df_members = pd.DataFrame(), pd.DataFrame()
+
+
+if df_providers.empty:
+    st.warning("Data not loaded. Please check files in 'dataset' folder.")
+    st.stop()
+
+
+tab_filtros, tab_ai = st.sidebar.tabs(["Filters", "AI Assistant"])
+
+with tab_filtros:
+    if st.button("Total Reset", use_container_width=True, help="Remove all filters and restore the map to its original state."):
+        for key in list(st.session_state.keys()):
+            if key.startswith("sidebar_tab_") or key.startswith("expander_carteira_auto_"):
+                del st.session_state[key]
+                
+        reset_keys = [
+            "last_map_center", "last_map_zoom", "ping_location", 
+            "simulation_result", "simulation_benchmark", "trigger_simulation",
+            "provider_search", "map_mode", "radius_km", "map_theme", "is_locked",
+            "active_pin_click", "show_provider_markers", "cluster_markers"
+        ]
+        for k in reset_keys:
+            if k in st.session_state:
+                del st.session_state[k]
+        st.rerun()
+
+    with st.expander("Export & Style", expanded=False):
+        map_type = st.selectbox(
+            "Map Theme",
+            ["OpenStreetMap", "CartoDB positron", "CartoDB dark_matter"],
+            key="map_type"
+        )
+        locked_mode = st.toggle(
+            "Freeze Map (Print)",
+            value=False,
+            key="locked_mode",
+            help="Locks zoom and movement to facilitate clean static captures."
+        )
+            
+        if st.button("Capture View", use_container_width=True, help="Save an image of the current map view."):
+            st.session_state["trigger_printscreen"] = True
+            st.session_state["last_capture_info"] = None
+            
+        if st.session_state.get("last_capture_info"):
+            capture_info = st.session_state["last_capture_info"]
+            st.success("Map view captured!")
+            col_dl, col_cl = st.columns([3, 1])
+            with col_dl:
+                with open(capture_info["path"], "rb") as f:
+                    st.download_button(
+                        label=f"Download {capture_info['filename']}",
+                        data=f,
+                        file_name=capture_info["filename"],
+                        mime="image/png",
+                        use_container_width=True,
+                        key="dl_btn_final"
+                    )
+            with col_cl:
+                if st.button("Clear", use_container_width=True):
+                    st.session_state["last_capture_info"] = None
+                    st.rerun()
+            
+    st.markdown("### Analysis")
+    
+    if st.session_state["ping_location"]:
+        if st.button("Remove Pin", use_container_width=True, help="Removes the manual marker from the map."):
+            st.session_state["ping_location"] = None
+            st.rerun()
+    
+    map_modes = st.multiselect(
+        "Layers",
+        ["Heatmap (Member Portfolio)", "Coverage Radius"],
+        key="map_modes",
+        help="Add heatmaps or visualize coverage reach around providers."
+    )
+    
+    radius_km = st.slider("Radius (km)", 0, 20, 0, key="radius_km", help="Set the coverage radius (km) for proximity analysis.")
+    
+    st.markdown("### Geo-Simulation")
+    sim_metric = st.selectbox(
+        "Metric",
+        ["Portfolio Volume"],
+        index=0,
+        key="sim_metric",
+        help="Select the metric for optimized point simulation."
+    )
+    
+    col_meta1, col_meta2 = st.columns(2)
+    with col_meta1:
+        if st.button("Search Optimized", use_container_width=True, help="Simulate the best location for a new provider based on chosen metric."):
+            st.session_state["trigger_simulation"] = True
+    with col_meta2:
+        if st.button("Clear Results", use_container_width=True, help="Clear simulation results."):
+            st.session_state["simulation_result"] = None
+            st.session_state["simulation_benchmark"] = None
+            st.session_state["trigger_simulation"] = False
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### Provider Network")
+
+    col_pin1, col_pin2, col_pin3 = st.columns(3)
+    with col_pin1:
+        show_markers = st.toggle(
+            "Pins",
+            value=True,
+            key="show_provider_markers",
+            help="Show or hide provider markers on the map."
+        )
+    with col_pin2:
+        cluster_markers = st.toggle(
+            "Clustering",
+            value=True,
+            key="cluster_markers",
+            help="Group nearby markers to keep the view clean. Disable for isolated pins."
+        )
+    with col_pin3:
+        manual_pin_enabled = st.toggle(
+            "Manual Pin",
+            value=False,
+            key="manual_pin_enabled",
+            help="Clicking on the map places a manual marker. If unchecked, clicks will not move the pin."
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    busca_multi = []
+    if "prov_name" in df_providers.columns:
+        opcoes_busca = sorted(df_providers["prov_name"].dropna().astype(str).unique())
+            
+        busca_multi = st.multiselect(
+            "Direct Search", 
+            options=opcoes_busca, 
+            placeholder="Type names...",
+            key="busca_prestador"
+        )
+
+    df_providers_cat_filtered = df_providers.copy()
+
+    with st.expander("Network Filters", expanded=False):
+        cfg_ignore_providers = ["prov_id", "loc_latitude", "loc_longitude", "loc_zip_code", "prov_name"]
+
+        sidebar_config = detect_filter_columns(df_providers, ignored_columns=cfg_ignore_providers)
+        
+        for cfg in sidebar_config:
+            if cfg["col"] == "prov_tax_id":
+                cfg["label"] = "Registry Status"
+
+        df_providers_cat_filtered = generate_filters(
+            df_providers_cat_filtered,
+            st,
+            sidebar_config,
+            key_prefix="sidebar_tab"
+        )
+
+    if busca_multi:
+        df_providers_name_filtered = df_providers[
+            df_providers["prov_name"].isin(busca_multi)
+        ]
+        
+        active_cat_filters = False
+        cat_cols = [c['col'] for c in sidebar_config]
+        for col in cat_cols:
+            key = f"sidebar_tab_{col}"
+            if key in st.session_state and st.session_state[key]:
+                active_cat_filters = True
+                break
+        
+        if active_cat_filters:
+            df_providers_filtered = pd.concat([df_providers_cat_filtered, df_providers_name_filtered]).drop_duplicates(subset=["prov_id"])
+        else:
+            df_providers_filtered = df_providers_name_filtered
+    else:
+        df_providers_filtered = df_providers_cat_filtered
+
+    st.markdown("---")
+    st.markdown("### Customer Base Filters")
+
+    with st.expander("Portfolio Attributes", expanded=False):
+        IGNORE_MEMBERS = ["member_id", "loc_zip_code", "loc_latitude", "loc_longitude"]
+        config_members = detect_filter_columns(df_members, ignored_columns=IGNORE_MEMBERS)
+        config_members.sort(key=lambda x: x["label"])
+
+        df_members_filtered = df_members.copy()
+        
+        df_members_filtered = generate_filters(
+            df_members_filtered,
+            st,
+            config_members,
+            key_prefix="expander_members_auto"
+        )
+
+# Helper for consistent map layer application
+def apply_map_layers(m_obj, providers_df, members_df, show_h=False, show_m=True, show_r=False, cluster_m=True, rad=0, ping_loc=None, best_pt=None):
+    if show_h:
+        add_heatmap(m_obj, members_df, count_unique=True)
+    
+    if show_m:
+        total_m = members_df['member_id'].nunique() if 'member_id' in members_df.columns else len(members_df)
+        add_provider_markers(
+            m_obj, providers_df, 
+            radius_km=rad, total_portfolio=total_m, 
+            show_radius=show_r, cluster_markers=cluster_m
+        )
+    
+    if ping_loc:
+        lat_p, lon_p = ping_loc["lat"], ping_loc["lng"]
+        m_ping = calculate_full_point_metrics(lat_p, lon_p, members_df, rad)
+        addr_p = identify_nearby_region(lat_p, lon_p, members_df)
+        add_ping_marker(
+            m_obj, lat_p, lon_p, 
+            info=f"<b>Coordinates:</b> {lat_p:.4f}, {lon_p:.4f}<br>",
+            radius_km=rad if show_r else None, 
+            metrics=m_ping, address_info=addr_p
+        )
+            
+    if best_pt:
+        lat_o, lon_o, count_o = best_pt
+        m_opt = calculate_full_point_metrics(lat_o, lon_o, members_df, rad)
+        addr_o = identify_nearby_region(lat_o, lon_o, members_df)
+        add_simulation_marker(
+            m_obj, lat_o, lon_o, count_o, rad,
+            best_e=st.session_state.get("simulation_benchmark"),
+            metric_name=st.session_state.get("simulation_metric_label", ""),
+            metrics=m_opt, address_info=addr_o
+        )
+
+show_heatmap_members = "Heatmap (Member Portfolio)" in map_modes
+show_radius = "Coverage Radius" in map_modes
+
+if radius_km > 0 and not df_providers_filtered.empty:
+    with st.spinner("Updating coverage statistics..."):
+        radius_counts = calculate_member_count_in_radius(df_providers_filtered, df_members_filtered, radius_km)
+else:
+    radius_counts = {}
+
+# Coordinate and Zoom preparation
+if st.session_state.get("last_map_center") and st.session_state.get("last_map_zoom"):
+    lat_center, lon_center = st.session_state["last_map_center"]["lat"], st.session_state["last_map_center"]["lng"]
+    zoom_level = st.session_state["last_map_zoom"]
+elif not df_providers_filtered.empty:
+    all_lats = pd.concat([df_providers_filtered["loc_latitude"], df_members_filtered["loc_latitude"]])
+    all_lons = pd.concat([df_providers_filtered["loc_longitude"], df_members_filtered["loc_longitude"]])
+    lat_center, lon_center = all_lats.mean(), all_lons.mean()
+    
+    max_diff = max(all_lats.max() - all_lats.min(), all_lons.max() - all_lons.min())
+    zoom_level = 4 if max_diff > 30 else 5 if max_diff > 15 else 6 if max_diff > 10 else 8 if max_diff > 5 else 10
+else:
+    lat_center, lon_center, zoom_level = 39.8283, -98.5795, 4
+
+# Simulation execution
+if st.session_state.get("trigger_simulation") and not df_members_filtered.empty:
+    with st.spinner("Simulating suggested center..."):
+        best_new_point, best_existing_point = find_optimal_point(
+            df_members_filtered, radius_km, 
+            df_providers=df_providers_filtered, count_unique=True
+        )
+        st.session_state.update({
+            "simulation_result": best_new_point,
+            "simulation_benchmark": best_existing_point,
+            "simulation_metric_label": "Portfolio Volume",
+            "trigger_simulation": False
+        })
+
+# Map Object Construction
+mapa = create_base_map(lat_center, lon_center, map_type, zoom_start=zoom_level, locked=locked_mode)
+
+df_providers_for_map = df_providers_filtered.copy()
+if radius_counts and "prov_id" in df_providers_for_map.columns:
+    df_providers_for_map["beneficiarios_no_raio_dinamico"] = df_providers_for_map["prov_id"].map(radius_counts)
+
+apply_map_layers(
+    mapa, df_providers_for_map, df_members_filtered,
+    show_h=show_heatmap_members, show_m=show_markers, show_r=show_radius,
+    cluster_m=cluster_markers, rad=radius_km, 
+    ping_loc=st.session_state["ping_location"],
+    best_pt=st.session_state["simulation_result"]
+)
+
+map_data = render_map(mapa)
+
+if map_data:
+    if map_data.get("last_clicked"):
+        clicked_loc = map_data["last_clicked"]
+        if st.session_state.get("manual_pin_enabled", False):
+            if st.session_state["ping_location"] != clicked_loc:
+                st.session_state["ping_location"] = clicked_loc
+                st.rerun()
+    
+    if map_data.get("zoom"): st.session_state["last_map_zoom"] = map_data["zoom"]
+    if map_data.get("center"): st.session_state["last_map_center"] = map_data["center"]
+
+# Capture Logic
+if st.session_state.get("trigger_printscreen"):
+    center = st.session_state.get("last_map_center", {"lat": lat_center, "lng": lon_center})
+    zoom = st.session_state.get("last_map_zoom", zoom_level)
+    
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filepath = f"printscreens/network_map_{timestamp}.png"
+    
+    with st.spinner("Rendering map image..."):
+        m_print = create_base_map(center["lat"], center["lng"], map_type, zoom_start=zoom, locked=True)
+        apply_map_layers(
+            m_print, df_providers_for_map, df_members_filtered,
+            show_h=show_heatmap_members, show_m=show_markers, show_r=show_radius,
+            cluster_m=cluster_markers, rad=radius_km,
+            ping_loc=st.session_state["ping_location"],
+            best_pt=st.session_state["simulation_result"]
+        )
+        capture_success = save_map_as_image(m_print, filepath)
+        
+    if capture_success:
+        st.session_state["last_capture_info"] = {
+            "path": filepath,
+            "filename": f"Network_Map_{timestamp}.png"
+        }
+    else:
+        st.error("Technical error generating capture.")
+    
+    st.session_state["trigger_printscreen"] = False
+    st.rerun()
+
+
+
+st.markdown("---")
+render_member_dashboard(df_members_filtered)
+st.markdown("---")
+render_provider_dashboard(df_providers_filtered)
+
+
+with tab_ai:
+    st.markdown('<div class="ai-header"><h3>Strategic Advisory</h3></div>', unsafe_allow_html=True)
+    st.markdown('<div class="ai-subtitle">Advanced network analysis and strategic insights.</div>', unsafe_allow_html=True)
+
+    chat_container = st.container()
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    with chat_container:
+        for message in st.session_state.messages:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+    if prompt := st.chat_input("How can I help with network strategy today?"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with chat_container:
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+        with st.spinner("Analyzing data..."):
+            data_context = generate_data_summary(
+                df_providers_filtered, 
+                df_members_filtered,
+                simulation_results=st.session_state.get("simulation_result"),
+                benchmark_sim=st.session_state.get("simulation_benchmark"),
+                radius_km=radius_km,
+                map_modes=map_modes
+            )
+            
+            response = ask_agent(
+                prompt,
+                data_context, 
+                history=st.session_state.messages
+            )
+        
+    if st.button("Clear History", use_container_width=True):
+        st.session_state.messages = []
+        st.rerun()
