@@ -220,7 +220,13 @@ def render_member_dashboard(df_members):
     # Using Portfolio Accent Colors for charts
     st.markdown(f"<h2 style='font-family: var(--font-main); font-weight: 600;'>Portfolio Analytics</h2>", unsafe_allow_html=True)
     
-    total_members = df_members['member_id'].nunique() if 'member_id' in df_members.columns else len(df_members)
+    # Standardized key for ID tracking
+    col_id = 'user_id' if 'user_id' in df_members.columns else 'member_id' if 'member_id' in df_members.columns else None
+    
+    if col_id:
+        total_members = df_members[col_id].nunique()
+    else:
+        total_members = len(df_members)
     
     k1, k2, k3, k4 = st.columns(4)
     with k1: render_kpi_card("Total Members", f"{total_members:,}", "Beneficiaries")
@@ -247,11 +253,11 @@ def render_member_dashboard(df_members):
     col1, col2 = st.columns(2)
     with col1:
         if "loc_region" in df_members.columns:
-            df_reg = df_members.groupby("loc_region")["member_id"].nunique().reset_index(name="count")
+            df_reg = df_members.groupby("loc_region")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
             render_bar_chart(df_reg.sort_values("count", ascending=False), "count", "loc_region", COLOR_GEO_REGION, "Region Breakdown")
     with col2:
         if "loc_state" in df_members.columns:
-            df_st = df_members.groupby("loc_state")["member_id"].nunique().reset_index(name="count")
+            df_st = df_members.groupby("loc_state")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
             render_bar_chart(df_st.sort_values("count", ascending=False).head(10), "count", "loc_state", COLOR_GEO_STATE, "Top 10 States")
 
     st.markdown("---")
@@ -261,11 +267,11 @@ def render_member_dashboard(df_members):
     col3, col4 = st.columns(2)
     with col3:
         if "contract_product" in df_members.columns:
-            df_prod = df_members.groupby("contract_product")["member_id"].nunique().reset_index(name="count")
+            df_prod = df_members.groupby("contract_product")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
             render_bar_chart(df_prod.sort_values("count", ascending=False).head(8), "count", "contract_product", COLOR_SEGMENT, "Product Portfolio")
     with col4:
         if "contract_status" in df_members.columns:
-            df_stat = df_members.groupby("contract_status")["member_id"].nunique().reset_index(name="count")
+            df_stat = df_members.groupby("contract_status")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
             render_bar_chart(df_stat.sort_values("count", ascending=False), "count", "contract_status", COLOR_STATUS, "Contract Status")
 
     st.markdown("---")
@@ -275,12 +281,12 @@ def render_member_dashboard(df_members):
     col5, col6 = st.columns(2)
     with col5:
         if "user_age_group" in df_members.columns:
-            df_age = df_members.groupby("user_age_group")["member_id"].nunique().reset_index(name="count")
+            df_age = df_members.groupby("user_age_group")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
             render_bar_chart(df_age, "count", "user_age_group", COLOR_DEMO, "Age Distribution")
     with col6:
         col_type = "contract_type" if "contract_type" in df_members.columns else "contract_modality"
         if col_type in df_members.columns:
-            df_type = df_members.groupby(col_type)["member_id"].nunique().reset_index(name="count")
+            df_type = df_members.groupby(col_type)[col_id or df_members.columns[0]].nunique().reset_index(name="count")
             render_bar_chart(df_type, "count", col_type, COLOR_MODAL, "Type/Modality")
 
 
