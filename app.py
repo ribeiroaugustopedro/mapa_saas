@@ -1,4 +1,5 @@
 import streamlit as st
+st.set_page_config(layout="wide", page_title="Network Map")
 import pandas as pd
 from pathlib import Path
 import datetime
@@ -8,15 +9,7 @@ import subprocess
 import sys
 import io
 
-def ensure_playwright_installed():
-    if 'playwright_ready' not in st.session_state:
-        try:
-            subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
-            st.session_state.playwright_ready = True
-        except:
-            pass
 
-ensure_playwright_installed()
 
 from modules.data import get_data, get_filtered_heatmap_grid
 from modules.utils import (
@@ -39,8 +32,6 @@ from modules.dashboard import (
     get_theme_colors
 )
 from modules.agent_ai import generate_data_summary, ask_agent
-
-st.set_page_config(layout="wide", page_title="Network Map")
 
 css_path = Path(__file__).parent / ".streamlit" / "style.css"
 if css_path.exists():
@@ -68,7 +59,9 @@ except Exception as e:
     st.error(f"Error loading data: {str(e)}")
     df_providers, df_members = pd.DataFrame(), pd.DataFrame()
 
-if df_providers.empty:
+if df_providers.empty or df_members.empty:
+    st.warning("⚠️ Data source not found or empty. Please check your MotherDuck token in Streamlit Secrets.")
+    st.info("Ensure you have added `[motherduck]` and `MOTHERDUCK_TOKEN = '...'` to the Cloud Secrets dashboard.")
     st.stop()
 
 df_providers_filtered = df_providers.copy()
@@ -195,12 +188,24 @@ with tab_map:
     components.html(mapa._repr_html_(), height=700)
 
 if st.session_state.get("trigger_capture"):
-    with st.spinner("Generating capture..."):
-        img = capture_map_to_bytes(mapa)
-        if img:
-            st.session_state["captured_image"] = img
+    with st.spinner("Initializing system capture (this may take a moment on first run)..."):
+        try:
+            # Lazy install playwright only when needed
+            if 'playwright_ready' not in st.session_state:
+                subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
+                st.session_state.playwright_ready = True
+            
+            img = capture_map_to_bytes(mapa)
+            if img:
+                st.session_state["captured_image"] = img
+                st.session_state["trigger_capture"] = False
+                st.rerun()
+            else:
+                st.error("Capture failed. Visual rendering engine not responding.")
+        except Exception as e:
+            st.error(f"Capture engine error: {str(e)}")
+        finally:
             st.session_state["trigger_capture"] = False
-            st.rerun()
 
 with tab_members:
     render_member_dashboard(df_members_filtered)
