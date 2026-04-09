@@ -140,10 +140,10 @@ with tab_filtros:
     
     col_meta1, col_meta2 = st.columns(2)
     with col_meta1:
-        if st.button("Search Optimized", use_container_width=True, help="Simulate the best location for a new provider based on chosen metric."):
+        if st.button("Search Optimized", use_container_width=True, help="Simulate the best location for a new provider."):
             st.session_state["trigger_simulation"] = True
     with col_meta2:
-        if st.button("Clear Results", use_container_width=True, help="Clear simulation results."):
+        if st.button("Clear Results", use_container_width=True):
             st.session_state["simulation_result"] = None
             st.session_state["simulation_benchmark"] = None
             st.session_state["trigger_simulation"] = False
@@ -152,28 +152,25 @@ with tab_filtros:
     st.markdown("---")
     st.markdown("### Provider Network")
 
-    col_pin1, col_pin2, col_pin3 = st.columns(3)
-    with col_pin1:
-        show_markers = st.toggle(
-            "Pins",
-            value=True,
-            key="show_provider_markers",
-            help="Show or hide provider markers on the map."
-        )
-    with col_pin2:
-        cluster_markers = st.toggle(
-            "Clustering",
-            value=True,
-            key="cluster_markers",
-            help="Group nearby markers to keep the view clean. Disable for isolated pins."
-        )
-    with col_pin3:
-        manual_pin_enabled = st.toggle(
-            "Manual Pin",
-            value=False,
-            key="manual_pin_enabled",
-            help="Clicking on the map places a manual marker. If unchecked, clicks will not move the pin."
-        )
+    # Stack toggle switches to prevent sidebar wrapping
+    st.toggle(
+        "Show Provider Pins",
+        value=True,
+        key="show_provider_markers",
+        help="Display all filtered clinics/providers on the map."
+    )
+    st.toggle(
+        "Enable Clustering",
+        value=True,
+        key="cluster_markers",
+        help="Group nearby markers to keep the view clean."
+    )
+    st.toggle(
+        "Enable Manual Pin",
+        value=False,
+        key="manual_pin_enabled",
+        help="Clicking on the map places a strategic manual marker."
+    )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -324,8 +321,11 @@ if radius_counts and "prov_id" in df_providers_for_map.columns:
 
 apply_map_layers(
     mapa, df_providers_for_map, df_members_filtered,
-    show_h=show_heatmap_members, show_m=show_markers, show_r=show_radius,
-    cluster_m=cluster_markers, rad=radius_km, 
+    show_h=show_heatmap_members, 
+    show_m=st.session_state["show_provider_markers"], 
+    show_r=show_radius,
+    cluster_m=st.session_state["cluster_markers"], 
+    rad=radius_km, 
     ping_loc=st.session_state["ping_location"],
     best_pt=st.session_state["simulation_result"]
 )
@@ -355,8 +355,11 @@ if st.session_state.get("trigger_printscreen"):
         m_print = create_base_map(center["lat"], center["lng"], map_type, zoom_start=zoom, locked=True)
         apply_map_layers(
             m_print, df_providers_for_map, df_members_filtered,
-            show_h=show_heatmap_members, show_m=show_markers, show_r=show_radius,
-            cluster_m=cluster_markers, rad=radius_km,
+            show_h=show_heatmap_members, 
+            show_m=st.session_state["show_provider_markers"], 
+            show_r=show_radius,
+            cluster_m=st.session_state["cluster_markers"], 
+            rad=radius_km,
             ping_loc=st.session_state["ping_location"],
             best_pt=st.session_state["simulation_result"]
         )
