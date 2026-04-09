@@ -71,7 +71,27 @@ def ask_agent(user_question, context_summary, history=[]):
     try:
         genai.configure(api_key=api_key)
         
-        # 100% Free Version: Gemini 1.5 Flash (Latest)
+        # Robust Model Selection: List available models to find the best match for current region/API
+        available_models = [m.name for m in genai.list_models() if "generateContent" in m.supported_generation_methods]
+        
+        # Priority order for free-tier performance
+        priority_models = [
+            "models/gemini-1.5-flash-latest",
+            "models/gemini-1.5-flash",
+            "models/gemini-1.5-flash-001",
+            "models/gemini-pro"
+        ]
+        
+        selected_model = None
+        for target in priority_models:
+            if target in available_models:
+                selected_model = target
+                break
+        
+        if not selected_model:
+            # Fallback to the first available model if priority list fails
+            selected_model = available_models[0] if available_models else "models/gemini-1.5-flash"
+
         generation_config = {
             "temperature": 0.2,
             "top_p": 0.9,
@@ -79,9 +99,8 @@ def ask_agent(user_question, context_summary, history=[]):
             "max_output_tokens": 4096,
         }
 
-        # Using -latest to ensure compatibility with recent API changes
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash-latest",
+            model_name=selected_model,
             generation_config=generation_config,
             system_instruction=(
                 "You are the Strategic Network Director. "
@@ -97,8 +116,6 @@ def ask_agent(user_question, context_summary, history=[]):
             role = "user" if msg["role"] == "user" else "model"
             chat_history.append({"role": role, "parts": [msg["content"]]})
 
-        # Process chat
-        # Note: history in start_chat should not include the latest user prompt if we use send_message
         valid_history = chat_history[:-1] if chat_history else None
         chat = model.start_chat(history=valid_history)
         
@@ -109,8 +126,8 @@ def ask_agent(user_question, context_summary, history=[]):
         
     except Exception as e:
         error_msg = str(e)
-        if "404" in error_msg:
-            return "AI Configuration Error: Model 'gemini-1.5-flash' not found. This might be a temporary API availability issue or region restriction."
         if "429" in error_msg or "RESOURCE_EXHAUSTED" in error_msg:
-            return "Quota Limit Reached: The free tier of Gemini 1.5 Flash is currently at capacity. Please try again in 60 seconds."
+            return "Quota Limit Reached: The free tier is currently at capacity. Please try again in 60 seconds."
+        if "API_KEY_INVALID" in error_msg:
+            return "Configuration Error: The provided Gemini API Key is invalid or expired."
         return f"Strategic AI Engine Error: {error_msg}"
