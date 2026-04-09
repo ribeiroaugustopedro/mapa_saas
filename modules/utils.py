@@ -160,6 +160,15 @@ def detect_filter_columns(
     
     ignored_set = {c.lower() for c in ignored_columns}
     
+    # Storytelling Order Weights (Lower is more important)
+    ORDER_WEIGHTS = {
+        "region": 10, "state": 20, "city": 30, "neighborhood": 40, "zip_code": 50,
+        "type": 60, "modality": 70, "product": 80, "age_group": 90,
+        "status": 100
+    }
+    
+    # Collect candidates
+    candidates = []
     for col in df.columns:
         if col.lower() in ignored_set:
             continue
@@ -182,14 +191,25 @@ def detect_filter_columns(
         label_base = col.replace("user_", "").replace("loc_", "").replace("contract_", "").replace("prov_", "").replace("_", " ")
         label_base = label_base.title()
         
-        generated_config.append({
+        # Determine weight for sorting
+        clean_col = col.lower().replace("loc_", "").replace("contract_", "").replace("user_", "").replace("prov_", "")
+        weight = 999
+        for key, w in ORDER_WEIGHTS.items():
+            if key in clean_col:
+                weight = w
+                break
+
+        candidates.append({
             "col": col,
             "label": label_base,
             "multivalue": bool(has_separator),
-            "separator": multivalue_separator
+            "separator": multivalue_separator,
+            "weight": weight
         })
         
-    return generated_config
+    # Sort by weight than alphabetically
+    candidates.sort(key=lambda x: (x["weight"], x["label"]))
+    return candidates
 
 def save_map_as_image(mapa, output_path):
     """

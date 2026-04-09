@@ -501,11 +501,12 @@ def add_simulation_marker(mapa, lat, lon, count, radius_km, best_e=None, metric_
         dash_array="10, 8"
     ).add_to(mapa)
 
-def render_map(mapa):
+def render_map(mapa, key="main_map"):
     LayerControl().add_to(mapa)
     return st_folium(
         mapa, 
-        width=1200, 
-        height=600,
-        returned_objects=["last_clicked", "zoom", "center"]
+        width=1400, 
+        height=700,
+        returned_objects=["last_clicked", "zoom", "center"],
+        key=key
     )

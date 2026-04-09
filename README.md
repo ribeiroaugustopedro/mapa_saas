@@ -1,32 +1,30 @@
-# Network Planner - Geospatial Network Intelligence
+# Network Planner - Geographic Strategic Intelligence
 
-A professional location intelligence platform designed for strategic network management. It integrates member density analysis, provider coverage mapping, and geospatial optimization algorithms into a minimalist, high-performance interface.
+A high-performance location intelligence platform designed for healthcare network optimization. It features an 'Intelligence Terminal' aesthetic with Monospace typography, dedicated analytical tabs, and real-time geospatial simulation.
 
-## Core Features
-- **Dynamic Spatial Exploration**: Interactive filters that maintain map state during analysis.
-- **Provider Network Mapping**: Visualization of healthcare clusters with custom iconography and coverage radii.
-- **Optimal Point Simulation**: Algorithm-driven identification of strategic locations for network expansion based on portfolio density.
-- **AI Strategic Advisory**: Integration with Google Gemini for natural language data analysis and strategic insights.
-- **Density Analytics**: Heatmap visualizations reflecting customer concentration versus existing network infrastructure.
-- **Code Optimization**: Comprehensive cleanup of legacy artifacts and dev caches.
+## Core Pillars
+- **Master Tab System**: Segmented focus between Geo-Map, Member Analytics, and Network Intelligence.
+- **High-Fidelity Demographics**: Analyzing 587k+ members with realistic socio-geographic distribution.
+- **Monospace Design**: Specialized UI focusing on technical precision and data density.
+- **Optimal Point Simulation**: Advanced algorithms to identify the best locations for network expansion.
+- **AI Consulting**: Integrated Strategic Consulting AI powered by Gemini for automated insight generation.
 
 ## Tech Stack
 - **Frontend**: Streamlit
-- **Geospatial Engine**: Folium (Leaflet.js)
-- **Data Engine**: DuckDB
-- **Artificial Intelligence**: Google Generative AI (Gemini Flash)
-- **Visualization**: Altair
+- **Geospatial**: Folium
+- **Analytics**: Altair (Custom Theme)
+- **Database**: DuckDB (Warehouse integration)
+- **Capture**: Playwright / Selenium
 
-## Local Installation
-1. Clone the repository and navigate to the project directory.
-2. Install the required Python packages:
+## Local Execution
+1. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-3. Launch the application:
+2. Launch:
    ```bash
    streamlit run app.py
    ```
 
-## Configuration
-For full AI functionality, ensure you have a Google Gemini API Key configured in `.streamlit/secrets.toml` or as an environment variable.
+## Design Philosophy
+The interface uses a minimalist dark-mode aesthetic with rainbow-accented UI elements. It prioritizes information density and geographic precision, ensuring that complex network strategies are easily interpretable through the standardized Monospace interface.

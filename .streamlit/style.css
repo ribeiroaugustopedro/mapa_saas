@@ -1,7 +1,7 @@
 :root {
   --rainbow-gradient: linear-gradient(90deg, #ff0000, #ff8c00, #ffd700, #00ff00, #00ffff, #0000ff, #8a2be2, #ff00ff, #ff0000);
-  --font-main: "Inter", system-ui, -apple-system, sans-serif;
-  --font-mono: "Fira Code", "Courier New", monospace;
+  --font-main: "Fira Code", "Roboto Mono", "Courier New", monospace;
+  --font-mono: "Fira Code", "Roboto Mono", "Courier New", monospace;
 }
 
 /* === Theme Variables Mapping === */
@@ -37,12 +37,20 @@
 }
 
 /* === Global App Styling === */
+* {
+    font-family: var(--font-main) !important;
+    font-size: 0.85rem !important; /* Smaller base size */
+}
+
+h1 { font-size: 2.2rem !important; }
+h2 { font-size: 1.6rem !important; }
+h3 { font-size: 1.2rem !important; }
+
 .stApp {
     background-color: var(--bg-color) !important;
     background-image: var(--bg-glow) !important;
     background-attachment: fixed !important;
     color: var(--text-primary) !important;
-    font-family: var(--font-main) !important;
 }
 
 /* Force Full Width for the Map/Dashboard (Removes side white spaces in wide mode) */
@@ -101,6 +109,7 @@ button {
   border: 1px solid var(--border-color) !important;
   border-radius: 8px !important;
   font-weight: 600 !important;
+  font-size: 0.8rem !important; /* Buttons slightly smaller */
   transition: all 0.2s ease !important;
 }
 
@@ -280,8 +289,13 @@ header button::before, header button::after {
 
 [data-baseweb="tab"][aria-selected="true"] {
     color: var(--text-primary) !important;
-    font-weight: bold !important;
+    font-weight: 700 !important;
     background-color: rgba(255, 255, 255, 0.03) !important;
+}
+
+/* Force Monospace on all Streamlit specific fonts */
+.stWidget, .stButton, .stTextInput, .stSelectbox, .stSlider, .stMarkdown, p, div, span, button {
+    font-family: var(--font-main) !important;
 }
 
 /* === Dashboard Cards: Portfolio Project Card Match === */

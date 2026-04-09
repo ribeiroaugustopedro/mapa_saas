@@ -114,22 +114,47 @@ def render_kpi_card(title, value, subtext="", color=None):
         <div class="card-value-container">
             <div class="{value_class}" {val_style}>{value}</div>
         </div>
-        <div class="card-subtext">{subtext}</div>
     </div>
     """, unsafe_allow_html=True)
 
-def apply_chart_theme(chart, title=None):
-    # Robust theme detection: check base AND background color
-    theme_base = st.get_option("theme.base")
+def get_theme_colors():
+    # Use Streamlit's own theme colors as source of truth
+    text_color = st.get_option("theme.textColor")
     bg_color = st.get_option("theme.backgroundColor")
     
-    # Heuristic: if base is dark OR bg_color is a dark hex value
-    is_dark = (theme_base == "dark") or (bg_color and bg_color.lower() in ["#0e1117", "#000000", "#111111"])
+    # If we can get st.get_option, use it. Otherwise fallback.
+    # We want to know if we are in dark mode to decide on bar labels
+    is_dark_base = True
+    if text_color:
+        # If text is dark (e.g. #31333F), it's Light Mode
+        t = text_color.lower().lstrip('#')
+        if len(t) == 3: t = ''.join([c*2 for c in t])
+        if len(t) == 6:
+            r, g, b = int(t[0:2],16), int(t[2:4],16), int(t[4:6],16)
+            brightness = (r * 299 + g * 587 + b * 114) / 1000
+            if brightness > 128: is_dark_base = True # Light text -> Dark Mode
+            else: is_dark_base = False # Dark text -> Light Mode
     
-    text_color = "#FFFFFF" if is_dark else "#1e293b"
-    label_color = "#cbd5e1" if is_dark else "#475569"
-    grid_color = "#334155" if is_dark else "#f1f5f9"
+    if is_dark_base:
+        return {
+            "title": text_color if text_color else "#f8fafc",
+            "axis": "#cbd5e1",
+            "grid": "#334155",
+            "bar_label": "#ffffff",
+            "is_dark": True
+        }
+    else:
+        return {
+            "title": text_color if text_color else "#1e293b",
+            "axis": "#475569",
+            "grid": "#f1f5f9",
+            "bar_label": "#ffffff",
+            "is_dark": False
+        }
 
+def apply_chart_theme(chart, title=None):
+    colors = get_theme_colors()
+    
     if title:
         chart = chart.properties(title=alt.TitleParams(
             text=title, 
@@ -137,7 +162,7 @@ def apply_chart_theme(chart, title=None):
             fontSize=16, 
             fontWeight=700, 
             dy=-15,
-            color=text_color
+            color=colors["title"]
         ))
 
     return chart.properties(
@@ -145,35 +170,36 @@ def apply_chart_theme(chart, title=None):
     ).configure_view(
         strokeWidth=0
     ).configure_axis(
-        gridColor=grid_color,
+        gridColor=colors["grid"],
         gridDash=[3,3],
         labelFontSize=11,
         titleFontSize=12,
         titleFontWeight=600,
-        labelColor=label_color,
-        titleColor=text_color,
+        labelColor=colors["axis"],
+        titleColor=colors["title"],
         domain=False,
         ticks=False,
         labelAngle=0
     ).configure_legend(
-        labelColor=label_color,
-        titleColor=text_color
+        labelColor=colors["axis"],
+        titleColor=colors["title"]
     ).configure_title(
-        color=text_color,
+        color=colors["title"],
         fontSize=18,
         fontWeight=700,
         anchor='start',
         offset=20
     )
 
-# Standard Theme Colors for Storytelling
-COLOR_GEO_REGION = "#8b5cf6" # Purple
-COLOR_GEO_STATE  = "#6366f1" # Indigo
-COLOR_GEO_CITY   = "#3b82f6" # Blue
-COLOR_SEGMENT    = "#f59e0b" # Amber
-COLOR_STATUS     = "#10b981" # Emerald
-COLOR_DEMO       = "#ec4899" # Pink
-COLOR_MODAL      = "#06b6d4" # Cyan
+# Dimension Color Palette (Unified cross-dashboard)
+DIM_REGION  = "#6366f1" # Indigo
+DIM_STATE   = "#8b5cf6" # Violet
+DIM_CITY    = "#3b82f6" # Blue
+DIM_PRODUCT = "#f59e0b" # Amber
+DIM_TYPE    = "#06b6d4" # Cyan
+DIM_STATUS  = "#10b981" # Emerald
+DIM_AGE     = "#ec4899" # Pink
+DIM_NAME    = "#f43f5e" # Rose
 
 def render_bar_chart(df, x_col, y_col, color, title, label_fmt=",.0f", horizontal=True):
     if df.empty:
@@ -194,153 +220,144 @@ def render_bar_chart(df, x_col, y_col, color, title, label_fmt=",.0f", horizonta
 
     bars = base.mark_bar(color=color, cornerRadiusEnd=4, opacity=0.9)
     
-    bg_color = st.get_option("theme.backgroundColor")
-    is_dark = (st.get_option("theme.base") == "dark") or (bg_color and bg_color.lower() in ["#0e1117", "#000000", "#111111"])
-    text_color = "#FFFFFF" if is_dark else "#1e293b"
+    colors = get_theme_colors()
     
     labels = base.mark_text(
         align='left' if horizontal else 'center',
         baseline='middle' if horizontal else 'bottom',
-        dx=5 if horizontal else 0,
-        dy=0 if horizontal else -5,
-        color=text_color,
+        dx=8 if horizontal else 0,
+        dy=0 if horizontal else -8,
+        color=colors["bar_label"],
         fontSize=11,
-        fontWeight=600
+        fontWeight=600,
+        clip=False
     ).encode(
         text=alt.Text(f"{x_col}:Q", format=label_fmt)
     )
 
     chart = (bars + labels).properties(height=300)
+    # Add padding to avoid cut labels
+    chart = chart.configure_view(strokeWidth=0).configure_axis(grid=False).properties(padding={"right": 50, "top": 10})
     st.altair_chart(apply_chart_theme(chart, title), use_container_width=True)
 
 def render_member_dashboard(df_members):
-    if df_members.empty:
-        return
+    if df_members.empty: return
 
-    # Using Portfolio Accent Colors for charts
-    st.markdown(f"<h2 style='font-family: var(--font-main); font-weight: 600;'>Portfolio Analytics</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='font-family: var(--font-main); font-weight: 700; color: {get_theme_colors()['title']};'>Members Dashboard</h2>", unsafe_allow_html=True)
     
-    # Standardized key for ID tracking
-    col_id = 'user_id' if 'user_id' in df_members.columns else 'member_id' if 'member_id' in df_members.columns else None
-    
-    if col_id:
-        total_members = df_members[col_id].nunique()
-    else:
-        total_members = len(df_members)
+    col_id = 'user_id' if 'user_id' in df_members.columns else 'member_id'
+    total_members = df_members[col_id].nunique() if col_id in df_members.columns else len(df_members)
     
     k1, k2, k3, k4 = st.columns(4)
-    with k1: render_kpi_card("Total Members", f"{total_members:,}", "Beneficiaries")
+    with k1: render_kpi_card("Total Active Members", f"{total_members:,}", "Beneficiaries")
     with k2: 
-        top_p = "-"
-        if "contract_product" in df_members.columns and not df_members["contract_product"].empty:
-            top_p = df_members["contract_product"].value_counts().index[0]
-        render_kpi_card("Top Product", top_p, "Volume")
+        top_p = df_members["contract_product"].value_counts().index[0] if "contract_product" in df_members.columns and not df_members["contract_product"].empty else "-"
+        render_kpi_card("Dominant Product", top_p, "Portfolio Lead")
     with k3:
-        top_r = "-"
-        if "loc_region" in df_members.columns and not df_members["loc_region"].empty:
-            top_r = df_members["loc_region"].value_counts().index[0]
-        render_kpi_card("Top Region", top_r, "Presence")
+        top_r = df_members["loc_region"].value_counts().index[0] if "loc_region" in df_members.columns and not df_members["loc_region"].empty else "-"
+        render_kpi_card("Market Center", top_r, "Region Lead")
     with k4:
-        top_f = "-"
-        if "user_age_group" in df_members.columns and not df_members["user_age_group"].empty:
-            top_f = df_members["user_age_group"].value_counts().index[0]
-        render_kpi_card("Avg Age (Mode)", top_f, "Profile")
+        top_f = df_members["user_age_group"].value_counts().index[0] if "user_age_group" in df_members.columns and not df_members["user_age_group"].empty else "-"
+        render_kpi_card("Prime Demographic", top_f, "Age Range")
 
     st.markdown("---")
     
-    # Storytelling Phase 1: Geographic Footprint (Macro to Micro)
-    st.subheader("Geographic Distribution")
-    col1, col2 = st.columns(2)
-    with col1:
+    # Story 1: Market Footprint
+    st.subheader("Market Coverage")
+    g1, g2, g3 = st.columns(3)
+    with g1:
         if "loc_region" in df_members.columns:
-            df_reg = df_members.groupby("loc_region")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
-            render_bar_chart(df_reg.sort_values("count", ascending=False), "count", "loc_region", COLOR_GEO_REGION, "Region Breakdown")
-    with col2:
+            df_reg = df_members.groupby("loc_region")[col_id].nunique().reset_index(name="count")
+            render_bar_chart(df_reg.sort_values("count", ascending=False), "count", "loc_region", DIM_REGION, "Regional Split")
+    with g2:
         if "loc_state" in df_members.columns:
-            df_st = df_members.groupby("loc_state")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
-            render_bar_chart(df_st.sort_values("count", ascending=False).head(10), "count", "loc_state", COLOR_GEO_STATE, "Top 10 States")
+            df_st = df_members.groupby("loc_state")[col_id].nunique().reset_index(name="count")
+            render_bar_chart(df_st.sort_values("count", ascending=False).head(10), "count", "loc_state", DIM_STATE, "State Ranking")
+    with g3:
+        if "loc_city" in df_members.columns:
+            df_city = df_members.groupby("loc_city")[col_id].nunique().reset_index(name="count")
+            render_bar_chart(df_city.sort_values("count", ascending=False).head(10), "count", "loc_city", DIM_CITY, "City Hubs")
 
     st.markdown("---")
     
-    # Storytelling Phase 2: Product & Contract Strategic View
-    st.subheader("Contract & Product Strategy")
-    col3, col4 = st.columns(2)
-    with col3:
+    # Story 2: Product & Profiles
+    st.subheader("Structure & Demographics")
+    m1, m2, m3 = st.columns(3)
+    with m1:
         if "contract_product" in df_members.columns:
-            df_prod = df_members.groupby("contract_product")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
-            render_bar_chart(df_prod.sort_values("count", ascending=False).head(8), "count", "contract_product", COLOR_SEGMENT, "Product Portfolio")
-    with col4:
-        if "contract_status" in df_members.columns:
-            df_stat = df_members.groupby("contract_status")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
-            render_bar_chart(df_stat.sort_values("count", ascending=False), "count", "contract_status", COLOR_STATUS, "Contract Status")
-
-    st.markdown("---")
-    
-    # Storytelling Phase 3: Demographic Insights
-    st.subheader("Member Profiles")
-    col5, col6 = st.columns(2)
-    with col5:
+            df_p = df_members.groupby("contract_product")[col_id].nunique().reset_index(name="count")
+            render_bar_chart(df_p.sort_values("count", ascending=False), "count", "contract_product", DIM_PRODUCT, "Product Mix")
+    with m2:
         if "user_age_group" in df_members.columns:
-            df_age = df_members.groupby("user_age_group")[col_id or df_members.columns[0]].nunique().reset_index(name="count")
-            render_bar_chart(df_age, "count", "user_age_group", COLOR_DEMO, "Age Distribution")
-    with col6:
+            df_a = df_members.groupby("user_age_group")[col_id].nunique().reset_index(name="count")
+            render_bar_chart(df_a, "count", "user_age_group", DIM_AGE, "Age Distribution")
+    with m3:
         col_type = "contract_type" if "contract_type" in df_members.columns else "contract_modality"
         if col_type in df_members.columns:
-            df_type = df_members.groupby(col_type)[col_id or df_members.columns[0]].nunique().reset_index(name="count")
-            render_bar_chart(df_type, "count", col_type, COLOR_MODAL, "Type/Modality")
+            df_t = df_members.groupby(col_type)[col_id].nunique().reset_index(name="count")
+            render_bar_chart(df_t, "count", col_type, DIM_TYPE, "Contract Types")
 
+    st.markdown("---")
+    
+    # Story 3: Health Status
+    st.subheader("Operational Status")
+    r1, _ = st.columns([1, 1])
+    with r1:
+        if "contract_status" in df_members.columns:
+            df_s = df_members.groupby("contract_status")[col_id].nunique().reset_index(name="count")
+            render_bar_chart(df_s, "count", "contract_status", DIM_STATUS, "Operational Status")
 
 def render_provider_dashboard(df_providers):
-    if df_providers.empty:
-        return
+    if df_providers.empty: return
 
-    # Using Providers Accent Colors
-    st.markdown(f"<h2 style='font-family: var(--font-main); font-weight: 600;'>Network Analytics</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2 style='font-family: var(--font-main); font-weight: 700; color: {get_theme_colors()['title']};'>Providers Dashboard</h2>", unsafe_allow_html=True)
     
     total_p = len(df_providers)
     
     k1, k2, k3, k4 = st.columns(4)
-    with k1: render_kpi_card("Total Network", f"{total_p}", "Providers")
+    with k1: render_kpi_card("Total Network Points", f"{total_p:,}", "Service Units")
     with k2: 
-        top_t = "-"
-        if "prov_type" in df_providers.columns and not df_providers["prov_type"].empty:
-            top_t = df_providers["prov_type"].value_counts().index[0]
-        render_kpi_card("Leading Segment", top_t, "Volume")
+        top_t = df_providers["prov_type"].value_counts().index[0] if "prov_type" in df_providers.columns and not df_providers["prov_type"].empty else "-"
+        render_kpi_card("Core Specialization", top_t, "Network Lead")
     with k3:
-        top_r = "-"
-        if "loc_region" in df_providers.columns and not df_providers["loc_region"].empty:
-            top_r = df_providers["loc_region"].value_counts().index[0]
-        render_kpi_card("Network Center", top_r, "Concentration")
+        top_r = df_providers["loc_region"].value_counts().index[0] if "loc_region" in df_providers.columns and not df_providers["loc_region"].empty else "-"
+        render_kpi_card("Strategic Center", top_r, "Presence Lead")
     with k4:
-        status = "-"
-        if "prov_tax_id" in df_providers.columns and not df_providers["prov_tax_id"].empty:
-             status = df_providers["prov_tax_id"].value_counts().index[0]
-        render_kpi_card("Primary Status", status, "Predominant")
+        status = df_providers["contract_status"].value_counts().index[0] if "contract_status" in df_providers.columns and not df_providers["contract_status"].empty else "-"
+        render_kpi_card("Agreement Status", status, "Operational Lead")
 
     st.markdown("---")
     
-    # Storytelling Phase 1: Geographic Distribution
-    st.subheader("Network Reach")
-    c1, c2 = st.columns(2)
-    with c1:
+    # Analysis Row 1: Geography
+    st.subheader("Market Availability")
+    p1, p2, p3 = st.columns(3)
+    with p1:
         if "loc_region" in df_providers.columns:
             df_reg = df_providers.groupby("loc_region").size().reset_index(name="count")
-            render_bar_chart(df_reg.sort_values("count", ascending=False), "count", "loc_region", COLOR_GEO_REGION, "Provider Regions")
-    with c2:
+            render_bar_chart(df_reg.sort_values("count", ascending=False), "count", "loc_region", DIM_REGION, "Regional Split")
+    with p2:
         if "loc_state" in df_providers.columns:
             df_st = df_providers.groupby("loc_state").size().reset_index(name="count")
-            render_bar_chart(df_st.sort_values("count", ascending=False).head(10), "count", "loc_state", COLOR_GEO_STATE, "Top 10 States")
+            render_bar_chart(df_st.sort_values("count", ascending=False).head(10), "count", "loc_state", DIM_STATE, "State Ranking")
+    with p3:
+        if "loc_city" in df_providers.columns:
+            df_mun = df_providers.groupby("loc_city").size().reset_index(name="count")
+            render_bar_chart(df_mun.sort_values("count", ascending=False).head(10), "count", "loc_city", DIM_CITY, "City Hubs")
 
     st.markdown("---")
     
-    # Storytelling Phase 2: Provider Capabilities
-    st.subheader("Provider Segments")
-    c3, c4 = st.columns(2)
-    with c3:
+    # Analysis Row 2: Operational Intelligence
+    st.subheader("Network Intel")
+    s1, s2, s3 = st.columns(3)
+    with s1:
+        if "contract_status" in df_providers.columns:
+            df_status = df_providers.groupby("contract_status").size().reset_index(name="count")
+            render_bar_chart(df_status.sort_values("count", ascending=False), "count", "contract_status", DIM_STATUS, "Operational Status")
+    with s2:
         if "prov_type" in df_providers.columns:
             df_tipo = df_providers.groupby("prov_type").size().reset_index(name="count")
-            render_bar_chart(df_tipo.sort_values("count", ascending=False), "count", "prov_type", COLOR_SEGMENT, "Specialty Distribution")
-    with c4:
-        if "loc_city" in df_providers.columns:
-            df_mun = df_providers.groupby("loc_city").size().reset_index(name="count")
-            render_bar_chart(df_mun.sort_values("count", ascending=False).head(10), "count", "loc_city", COLOR_GEO_CITY, "Leading Hubs (Cities)")
+            render_bar_chart(df_tipo.sort_values("count", ascending=False), "count", "prov_type", DIM_TYPE, "Segment Mix")
+    with s3:
+        if "prov_name" in df_providers.columns:
+            df_name = df_providers.groupby("prov_name").size().reset_index(name="count")
+            render_bar_chart(df_name.sort_values("count", ascending=False).head(10), "count", "prov_name", DIM_NAME, "Entity Ranking")
