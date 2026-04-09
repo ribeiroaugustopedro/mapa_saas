@@ -1,23 +1,19 @@
-# Python Environment
 __pycache__/
 *.py[cod]
-.venv/
-venv/
+*$py.class
+.env
+.venv
 env/
-
-# App Generated Files
-printscreens/*
-!printscreens/.gitkeep
-map_temp_*.html
-*.log
-
-# Project Data
-*.db
-*.duckdb
-
-# Streamlit Configuration
-.streamlit/secrets.toml
-
-# System Files
+venv/
+ENV/
+.streamlit/config.toml
+dataset/
+printscreens/
+temp_warehouse.db
 .DS_Store
 Thumbs.db
+*.Zone.Identifier
+.vscode/
+.idea/
+.pytest_cache/
+.streamlit/secrets.toml
