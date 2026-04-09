@@ -1,5 +1,4 @@
 import streamlit as st
-st.set_page_config(layout="wide", page_title="Network Map")
 import pandas as pd
 from pathlib import Path
 import datetime
@@ -9,29 +8,14 @@ import subprocess
 import sys
 import io
 
-
-
+# Local modules
 from modules.data import get_data, get_filtered_heatmap_grid
-from modules.utils import (
-    generate_filters, detect_filter_columns, find_optimal_point, 
-    capture_map_to_bytes
-)
-from modules.map_builder import (
-    create_base_map, 
-    add_provider_markers, 
-    add_heatmap, 
-    add_ping_marker,
-    add_simulation_marker
-)
-from modules.dashboard import (
-    render_member_dashboard, 
-    render_provider_dashboard,
-    calculate_member_count_in_radius, 
-    calculate_full_point_metrics,
-    identify_nearby_region,
-    get_theme_colors
-)
+from modules.utils import generate_filters, detect_filter_columns, find_optimal_point, capture_map_to_bytes
+from modules.map_builder import create_base_map, add_provider_markers, add_heatmap, add_ping_marker, add_simulation_marker
+from modules.dashboard import render_member_dashboard, render_provider_dashboard, calculate_member_count_in_radius, calculate_full_point_metrics, identify_nearby_region, get_theme_colors
 from modules.agent_ai import generate_data_summary, ask_agent
+
+st.set_page_config(layout="wide", page_title="Network Map")
 
 css_path = Path(__file__).parent / ".streamlit" / "style.css"
 if css_path.exists():
