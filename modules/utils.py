@@ -159,7 +159,8 @@ def capture_map_to_bytes(mapa):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page(viewport={'width': 1600, 'height': 800})
-            file_url = f"file:///{os.path.abspath(tmp_html).replace('\\', '/')}"
+            abs_path = os.path.abspath(tmp_html).replace('\\', '/')
+            file_url = f"file:///{abs_path}"
             page.goto(file_url, wait_until="networkidle")
             time.sleep(1)
             img_bytes = page.screenshot(full_page=True)
