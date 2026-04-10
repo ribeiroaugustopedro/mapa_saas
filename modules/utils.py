@@ -123,8 +123,7 @@ def detect_filter_columns(df, ignored_columns=None, multivalue_separator="|"):
     ignored_set = {c.lower() for c in ignored_columns}
     ORDER_WEIGHTS = {
         "region": 10, "state": 20, "city": 30, "neighborhood": 40, "zip_code": 50,
-        "type": 60, "modality": 70, "product": 80, "age_group": 90,
-        "status": 100
+        "type": 60, "modality": 70, "status": 75, "product": 80, "age_group": 90
     }
     candidates = []
     for col in df.columns:

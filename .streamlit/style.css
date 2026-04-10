@@ -1,441 +1,234 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code:wght@400;600&display=swap');
+
 :root {
-  --rainbow-gradient: linear-gradient(90deg, #ff0000, #ff8c00, #ffd700, #00ff00, #00ffff, #0000ff, #8a2be2, #ff00ff, #ff0000);
-  --font-main: "Fira Code", "Roboto Mono", "Courier New", monospace;
-  --font-mono: "Fira Code", "Roboto Mono", "Courier New", monospace;
+    --rainbow-vibrant: linear-gradient(90deg, #ff0000, #ffa500, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff0000);
+    --rainbow-soft: linear-gradient(90deg, #ff9999, #ffcc99, #ffff99, #99ff99, #99ffff, #9999ff, #cc99ff, #ff99ff, #ff9999);
+    --rainbow-gradient: var(--rainbow-soft);
+    --font-main: "Inter", system-ui, -apple-system, sans-serif;
+    --font-mono: "Fira Code", "Courier New", monospace;
+    --surface-color: #161b22;
+    --bg-color: #0d1117;
+    --text-primary: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --border-color: #30363d;
 }
 
-/* === Theme Variables Mapping === */
-[data-theme="dark"] {
-  --bg-color: #0d1117;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --surface-color: #161b22;
-  --border-color: #30363d;
-  --bg-glow: radial-gradient(at 0% 0%, rgba(255, 0, 0, 0.08) 0px, transparent 50%),
-             radial-gradient(at 100% 100%, rgba(138, 43, 226, 0.08) 0px, transparent 50%);
+/* Animations */
+@keyframes rainbow-slide {
+    0% { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+}
+@keyframes background-slide {
+    from { background-position: 0% 0%; }
+    to { background-position: 200% 0%; }
 }
 
-[data-theme="light"] {
-  --bg-color: #f8fafc;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --surface-color: #ffffff;
-  --border-color: #e2e8f0;
-  --bg-glow: radial-gradient(at 0% 0%, rgba(255, 0, 0, 0.03) 0px, transparent 50%),
-             radial-gradient(at 100% 100%, rgba(138, 43, 226, 0.03) 0px, transparent 50%);
-}
-
-/* === Core Animations === */
-@keyframes rainbowGradient {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-@keyframes rainbowSlide {
-  0% { background-position: 0% 0%; }
-  100% { background-position: 200% 0%; }
-}
-
-/* === Global App Styling === */
 * {
     font-family: var(--font-main) !important;
-    font-size: 0.85rem !important; /* Smaller base size */
 }
 
-h1 { font-size: 2.2rem !important; }
-h2 { font-size: 1.6rem !important; }
-h3 { font-size: 1.2rem !important; }
+code,
+pre,
+button,
+[data-testid="stThumbValue"],
+.stButton button {
+    font-family: var(--font-mono) !important;
+}
 
 .stApp {
     background-color: var(--bg-color) !important;
-    background-image: var(--bg-glow) !important;
-    background-attachment: fixed !important;
-    color: var(--text-primary) !important;
 }
 
-/* Force Full Width for the Map/Dashboard (Removes side white spaces in wide mode) */
+/* === ALIGNMENT FIX === */
 [data-testid="stMainBlockContainer"] {
     max-width: 100% !important;
-    padding-top: 6rem !important;
-    padding-left: 1rem !important;
-    padding-right: 1.5rem !important;
-    padding-bottom: 5rem !important;
+    padding-top: 4.65rem !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
 }
 
-/* === Sidebar Overhaul === */
-[data-testid="stSidebar"] {
-    background-color: var(--bg-color) !important;
-    border-right: 1px solid var(--border-color) !important;
-    padding-top: 0 !important;
-    min-width: 420px !important;
-    max-width: 420px !important;
-}
-
-/* Remove extra gap at the top of the Sidebar in recent Streamlit versions */
 [data-testid="stSidebarContent"] {
-    padding-top: 0 !important;
+    padding-top: 0.8rem !important;
+    background-color: #0d1117 !important;
 }
 
-[data-testid="stSidebar"] h1, 
-[data-testid="stSidebar"] h2, 
-[data-testid="stSidebar"] h3 {
-    color: var(--text-primary) !important;
-    font-family: var(--font-main) !important;
-    font-weight: 600 !important;
-}
-
-[data-testid="stSidebar"] hr {
-    border-color: var(--border-color) !important;
-}
-
-/* Rainbow top bar on Header */
-header[data-testid="stHeader"]::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--rainbow-gradient);
-    background-size: 200% auto;
-    animation: rainbowSlide 4s linear infinite;
-    z-index: 999999;
-}
-
-/* === Buttons: Portfolio Style === */
-
-/* Clean Buttons - Default */
-button {
-  background-color: var(--surface-color) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 8px !important;
-  font-weight: 600 !important;
-  font-size: 0.8rem !important; /* Buttons slightly smaller */
-  transition: all 0.2s ease !important;
-}
-
-/* Sidebar App Buttons: Rainbow Contour RESTORED */
-[data-testid="stSidebar"] button:not([role="tab"]):not([data-testid="stBaseButton-headerNoContent"]) {
-  position: relative !important;
-  z-index: 1 !important;
-  overflow: visible !important;
-}
-
-[data-testid="stSidebar"] button:not([role="tab"]):not([data-testid="stBaseButton-headerNoContent"])::before {
-  content: "";
-  position: absolute;
-  top: -2px; left: -2px; right: -2px; bottom: -2px;
-  background: var(--rainbow-gradient);
-  background-size: 200% auto;
-  animation: rainbowSlide 4s linear infinite;
-  border-radius: 10px;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  display: block !important; /* Ensure it stays visible here */
-}
-
-[data-testid="stSidebar"] button:not([role="tab"]):not([data-testid="stBaseButton-headerNoContent"]):hover::before {
-  opacity: 1;
-}
-
-[data-testid="stSidebar"] button:not([role="tab"]):hover {
-  border-color: transparent !important;
-}
-
-/* Specific Header & Tab cleanup */
-[role="tab"]::before, [role="tab"]::after,
-header button::before, header button::after {
-  display: none !important;
-}
-
-/* === Toggles & Sliders (Standard Overrides) === */
-
-/* Chart Dynamic Rainbow Effect */
-@keyframes rainbowHue {
-  from { filter: hue-rotate(0deg); }
-  to { filter: hue-rotate(360deg); }
-}
-
-[data-testid="stAltairChart"] svg path,
-[data-testid="stAltairChart"] svg rect {
-    animation: rainbowHue 10s linear infinite !important;
-}
-
-/* Multiselect Selected Chips (Tags) - FORCE RAINBOW */
-[data-testid="stTag"], 
-[data-baseweb="tag"],
-.stMultiSelect div[data-testid="stTag"],
-.stMultiSelect span[data-baseweb="tag"] {
-    background: var(--rainbow-gradient) !important;
-    background-size: 200% auto !important;
-    animation: rainbowSlide 4s linear infinite !important;
-    border-radius: 6px !important;
-    border: none !important;
-    color: white !important;
-    padding: 2px 8px !important;
-}
-
-[data-testid="stTag"] span, 
-[data-testid="stTag"] font,
-[data-baseweb="tag"] span {
-    color: white !important;
+/* Titles: Centered & Minimal */
+h1,
+h2,
+.stMarkdown h2 {
+    text-align: center !important;
+    font-size: 1.25rem !important;
     font-weight: 700 !important;
+    margin-bottom: 2.5rem !important;
 }
 
-[data-testid="stTag"] button svg,
-[data-baseweb="tag"] button svg {
-    fill: white !important;
-}
-
-/* Toggle Switch - Target background when active */
-[data-testid="stToggle"] [role="switch"][aria-checked="true"] {
-    background-color: #ef4444 !important; /* Clean Red for active */
-}
-
-/* Remove all other track hacks to restore default orange/red line */
-[data-testid="stSlider"] div[data-testid="stThumbValue"] {
-    color: #ef4444 !important;
-    font-weight: 700 !important;
-}
-
-.stSlider div[data-testid="stThumbValue"] {
-    color: var(--text-primary) !important;
-    font-family: var(--font-main) !important;
-}
-
-/* === Forms & Inputs === */
-[data-baseweb="select"] > div, 
-[data-baseweb="base-input"],
-.stTextArea textarea {
-    background-color: var(--surface-color) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 8px !important;
-    color: var(--text-primary) !important;
-}
-
-/* Update for modern stExpander structure with Rainbow focus */
+/* === EXPANDERS: RAINBOW MOLDURA (SIDEBAR) === */
 [data-testid="stExpander"] {
-    background-color: var(--surface-color) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 8px !important;
-    backdrop-filter: blur(10px);
-    margin-bottom: 12px !important;
-    transition: border-color 0.3s ease, box-shadow 0.3s ease !important;
-}
-
-[data-testid="stExpander"]:hover,
-[data-testid="stExpander"][aria-expanded="true"] {
-    border-color: var(--border-color) !important;
-}
-
-/* Specific Target for Rainbow Filters: Portfolio Attributes & Network Filters */
-[data-testid="stExpander"] summary:hover,
-[data-testid="stExpander"][aria-expanded="true"] summary,
-[data-testid="stExpander"] .streamlit-expanderHeader:hover,
-[data-testid="stExpander"] .streamlit-expanderHeader[aria-expanded="true"] {
-    background: var(--rainbow-gradient) !important;
-    background-size: 200% auto !important;
-    animation: rainbowSlide 4s linear infinite !important;
-    color: white !important;
-}
-
-[data-testid="stExpander"] summary:hover *,
-[data-testid="stExpander"][aria-expanded="true"] summary * {
-    color: white !important;
-    font-weight: 700 !important;
-}
-
-[data-testid="stExpander"] summary, 
-[data-testid="stExpander"] .streamlit-expanderHeader {
     background-color: transparent !important;
-    color: var(--text-primary) !important;
-    transition: background-color 0.2s ease;
+    border: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    border-radius: 0 !important;
+    margin-bottom: 0.5rem !important;
+    transition: all 0.3s ease !important;
 }
 
-[data-testid="stExpander"] summary:hover {
-    background-color: rgba(255, 255, 255, 0.05) !important;
+[data-testid="stExpander"] summary {
+    padding: 0.75rem 0.5rem !important;
+    border-left: 3px solid transparent !important;
+    transition: all 0.3s ease !important;
+}
+
+[data-testid="stExpander"] summary:hover,
+[data-testid="stExpander"][aria-expanded="true"] summary {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-left-color: transparent !important;
+    border-image: var(--rainbow-soft) 1 !important;
 }
 
 [data-testid="stExpander"] summary p {
-    color: var(--text-primary) !important;
-    font-weight: 500 !important;
+    font-size: 0.8rem !important;
+    font-weight: 700 !important;
+    color: var(--text-secondary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
 }
 
-[data-testid="stExpander"] svg {
-    fill: var(--text-secondary) !important;
-}
-
-[data-testid="stExpanderDetailsContainer"] {
+/* === CLEAN KPI CARDS (CENTERED & STANDARD) === */
+.kpi-card {
+    background-color: var(--surface-color) !important;
+    border: 1px solid var(--border-color) !important;
+    border-left: 4px solid #30363d !important;
+    border-radius: 4px !important;
     padding: 1.5rem 1rem !important;
-    border-top: 1px solid var(--border-color) !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 1rem !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    min-height: 120px !important;
 }
 
-/* === Tabs Overhaul: Remove orange marker === */
-[data-baseweb="tab-list"] {
-    background-color: transparent !important;
-    gap: 10px;
+.kpi-card:hover {
+    border-left-color: transparent !important;
+    border-image: var(--rainbow-soft) 1 !important;
+    transform: translateX(4px) !important;
 }
 
+/* === CHART TITLES (CENTERED & CLEAN) === */
+.chart-title-box {
+    margin-bottom: 1rem !important;
+    text-align: center !important;
+    border: none !important;
+}
+
+/* === DIVIDERS === */
+.dashboard-divider {
+    border: 0 !important;
+    height: 1px !important;
+    background-image: linear-gradient(to right, transparent, var(--border-color), transparent) !important;
+    margin: 1rem 0 !important;
+}
+
+/* === TITLES & VALUES === */
+.card-title {
+    color: var(--text-secondary) !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+.card-value {
+    color: var(--text-primary) !important;
+    font-size: 1.6rem !important;
+    font-weight: 700 !important;
+    font-family: var(--font-mono) !important;
+}
+
+/* === TABS === */
 [data-baseweb="tab-highlight"] {
-    background: var(--rainbow-gradient) !important;
-    background-size: 200% auto !important;
-    animation: rainbowSlide 4s linear infinite !important;
+    background: var(--rainbow-soft) !important;
+    background-size: 200% 100% !important;
+    animation: background-slide 3s linear infinite !important;
+    height: 2px !important;
 }
 
 [data-baseweb="tab"] {
     color: var(--text-secondary) !important;
-    border-bottom: 1px solid var(--border-color) !important;
 }
 
 [data-baseweb="tab"][aria-selected="true"] {
     color: var(--text-primary) !important;
     font-weight: 700 !important;
-    background-color: rgba(255, 255, 255, 0.03) !important;
 }
 
-/* Force Monospace on all Streamlit specific fonts */
-.stWidget, .stButton, .stTextInput, .stSelectbox, .stSlider, .stMarkdown, p, div, span, button {
-    font-family: var(--font-main) !important;
-}
-
-/* === Dashboard Cards: Portfolio Project Card Match === */
-.dashboard-card {
-  background-color: var(--surface-color) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 8px !important;
-  padding: 24px !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-  transition: transform 0.3s ease, box-shadow 0.3s ease !important;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 140px;
-  backdrop-filter: blur(10px);
-}
-
-.dashboard-card:hover {
-  transform: translateY(-5px) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-  border-color: rgba(138, 43, 226, 0.4) !important;
-}
-
-.card-title {
-  color: var(--text-secondary) !important;
-  font-family: var(--font-main) !important;
-  font-size: 0.8rem !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.1em !important;
-  margin-bottom: 12px !important;
-}
-
-.card-value {
-    font-size: 1.8rem !important;
-    font-weight: 700 !important;
-    margin-bottom: 4px !important;
-}
-
-/* Rainbow text utility for specific values */
-.rainbow-text {
-  color: var(--text-primary) !important;
-  font-weight: bold;
-}
-
-.rainbow-text-simple {
-  color: var(--text-primary) !important;
-  font-weight: bold;
-}
-
-.card-value-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 40px;
-}
-
-/* AI Assistant & Chat Overhaul */
-.ai-header {
-    border-bottom: 2px solid var(--border-color) !important;
-    padding-bottom: 1rem !important;
-    margin-bottom: 1.5rem !important;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.ai-icon-pulse {
-    width: 12px;
-    height: 12px;
-    background: var(--rainbow-gradient);
-    background-size: 200% auto;
-    animation: rainbowSlide 4s linear infinite, chatPulse 2s ease-in-out infinite;
-    border-radius: 50%;
-}
-
-@keyframes chatPulse {
-    0% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(138, 43, 226, 0.4); }
-    70% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 0 10px rgba(138, 43, 226, 0); }
-    100% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 0 rgba(138, 43, 226, 0); }
-}
-
-.ai-subtitle {
-    font-size: 0.95rem !important;
-    color: var(--text-secondary) !important;
-    margin-bottom: 2rem !important;
-    line-height: 1.6 !important;
-    font-style: italic;
-}
-
-[data-testid="stChatMessage"] {
+/* === BUTTONS === */
+.stButton>button {
     background-color: var(--surface-color) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 12px !important;
-    padding: 1rem !important;
-    margin-bottom: 1rem !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-    backdrop-filter: blur(10px) !important;
-    transition: transform 0.2s ease !important;
-    width: 100% !important;
-}
-
-[data-testid="stChatMessage"]:hover {
-    transform: translateX(4px) !important;
-    border-color: #8a2be244 !important;
-}
-
-/* User Message Specific Accent */
-[data-testid="stChatMessage"]:has(div[aria-label="user chat message"]) {
-    border-left: 4px solid #8a2be2 !important;
-}
-
-/* Assistant Message Specific Accent */
-[data-testid="stChatMessage"]:has(div[aria-label="assistant chat message"]) {
-    border-left: 4px solid #ef4444 !important;
-}
-
-.chat-suggested-chip {
-    background-color: var(--surface-color) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 20px !important;
-    padding: 6px 16px !important;
-    font-size: 0.85rem !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    display: inline-block;
-    margin-right: 8px;
-    margin-bottom: 8px;
-    color: var(--text-secondary) !important;
-}
-
-.chat-suggested-chip:hover {
-    border-color: #8a2be2 !important;
     color: var(--text-primary) !important;
-    background-color: rgba(138, 43, 226, 0.05) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 4px !important;
+    font-weight: 700 !important;
+    position: relative !important;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg-color); }
-::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+.stButton>button::after {
+    content: '' !important;
+    position: absolute !important;
+    bottom: -1px !important;
+    left: 10% !important;
+    width: 0 !important;
+    height: 2.5px !important;
+    background: var(--rainbow-soft) !important;
+    background-size: 200% 100% !important;
+    transition: width 0.3s ease !important;
+    animation: background-slide 6s linear infinite !important;
+    z-index: 5 !important;
+}
 
+.stButton>button:hover::after {
+    width: 80% !important;
+}
+
+/* WIDGETS */
+[data-testid="stToggle"] [role="switch"][aria-checked="true"] {
+    background: var(--rainbow-soft) !important;
+    background-size: 200% 100% !important;
+    animation: background-slide 3s linear infinite !important;
+}
+
+div[data-testid="stSlider"] div[data-baseweb="slider"]>div>div:nth-child(1)>div:nth-child(2) {
+    background: var(--rainbow-soft) !important;
+    background-size: 200% 100% !important;
+    animation: background-slide 2.5s linear infinite !important;
+}
+
+/* TOP RAINBOW LINE */
+[data-testid="stHeader"]::before, [data-testid="stAppViewContainer"]::before {
+    content: "" !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 4px !important;
+    background: var(--rainbow-soft) !important;
+    background-size: 100% !important;
+    animation: rainbow-slide 4s linear infinite !important;
+    z-index: 999999 !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border: none !important;
+    background: transparent !important;
+}
+
+.stAltairChart, [data-testid="stVerticalBlock"] > div { width: 100% !important; }
+.stAltairChart summary { display: none !important; }
+/* === MODERN SCROLLBARS === */
+::-webkit-scrollbar { width: 6px !important; height: 6px !important; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.05) !important; }
+::-webkit-scrollbar-thumb { background: #30363d !important; border-radius: 10px !important; }
+::-webkit-scrollbar-thumb:hover { background: #4b5563 !important; }
+[data-testid='stElementContainer'] [data-testid='stVerticalBlockBorderWrapper'] > div { overflow-y: auto !important; }

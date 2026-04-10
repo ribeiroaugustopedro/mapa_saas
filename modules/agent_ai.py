@@ -25,5 +25,25 @@ def ask_agent(user_question, context_summary, history=[]):
                 continue
     return f"Strategic Advisory at capacity. (Diagnostic: {last_err_msg})"
 
-def generate_data_summary(df_providers, df_members, simulation_results=None, benchmark_sim=None, radius_km=5, map_modes=[]):
-    return f"Network: {len(df_providers)}. Members: {len(df_members):,}."
+def generate_data_summary(df_providers, df_members):
+    return f"Network Points: {len(df_providers)}. Portfolio Size: {len(df_members):,} members."
+
+def render_ai_advisor(df_members, df_providers):
+    st.markdown("##### 🕵️ Strategic Advisory (BETA)")
+    if "ai_chat_history" not in st.session_state: st.session_state.ai_chat_history = []
+    
+    for chat in st.session_state.ai_chat_history:
+        with st.chat_message(chat["role"]):
+            st.markdown(chat["content"])
+
+    if prompt := st.chat_input("Explore Network Patterns..."):
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        st.session_state.ai_chat_history.append({"role": "user", "content": prompt})
+
+        with st.chat_message("assistant"):
+            with st.spinner("Running deep analysis..."):
+                summary = generate_data_summary(df_providers, df_members)
+                response = ask_agent(prompt, summary, st.session_state.ai_chat_history)
+                st.markdown(response)
+        st.session_state.ai_chat_history.append({"role": "assistant", "content": response})
