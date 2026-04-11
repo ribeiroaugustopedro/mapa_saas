@@ -106,7 +106,7 @@ def render_ai_advisor(df_members, df_providers):
         }
         /* Styling the Chat Input area to match header */
         .stChatInput {
-            padding: 0 !important;
+            padding: 0 10px !important;
         }
         .stChatInput > div {
             border: 1px solid #475569 !important;
