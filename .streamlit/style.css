@@ -15,12 +15,23 @@
 
 /* Animations */
 @keyframes rainbow-slide {
-    0% { filter: hue-rotate(0deg); }
-    100% { filter: hue-rotate(360deg); }
+    0% {
+        filter: hue-rotate(0deg);
+    }
+
+    100% {
+        filter: hue-rotate(360deg);
+    }
 }
+
 @keyframes background-slide {
-    from { background-position: 0% 0%; }
-    to { background-position: 200% 0%; }
+    from {
+        background-position: 0% 0%;
+    }
+
+    to {
+        background-position: 200% 0%;
+    }
 }
 
 * {
@@ -206,7 +217,8 @@ div[data-testid="stSlider"] div[data-baseweb="slider"]>div>div:nth-child(1)>div:
 }
 
 /* TOP RAINBOW LINE */
-[data-testid="stHeader"]::before, [data-testid="stAppViewContainer"]::before {
+[data-testid="stHeader"]::before,
+[data-testid="stAppViewContainer"]::before {
     content: "" !important;
     position: fixed !important;
     top: 0 !important;
@@ -224,11 +236,34 @@ div[data-testid="stSlider"] div[data-baseweb="slider"]>div>div:nth-child(1)>div:
     background: transparent !important;
 }
 
-.stAltairChart, [data-testid="stVerticalBlock"] > div { width: 100% !important; }
-.stAltairChart summary { display: none !important; }
+.stAltairChart,
+[data-testid="stVerticalBlock"]>div {
+    width: 100% !important;
+}
+
+.stAltairChart summary {
+    display: none !important;
+}
+
 /* === MODERN SCROLLBARS === */
-::-webkit-scrollbar { width: 6px !important; height: 6px !important; }
-::-webkit-scrollbar-track { background: rgba(0,0,0,0.05) !important; }
-::-webkit-scrollbar-thumb { background: #30363d !important; border-radius: 10px !important; }
-::-webkit-scrollbar-thumb:hover { background: #4b5563 !important; }
-[data-testid='stElementContainer'] [data-testid='stVerticalBlockBorderWrapper'] > div { overflow-y: auto !important; }
+::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05) !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #30363d !important;
+    border-radius: 10px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4b5563 !important;
+}
+
+[data-testid='stElementContainer'] [data-testid='stVerticalBlockBorderWrapper']>div {
+    overflow-y: auto !important;
+}

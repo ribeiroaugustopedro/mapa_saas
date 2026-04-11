@@ -22,16 +22,6 @@ def _compute_metrics(lat, lon, df_portfolio, radius_km):
 def calculate_full_point_metrics(lat, lon, df_portfolio, radius_km):
     return _compute_metrics(lat, lon, df_portfolio, radius_km)
 
-def identify_nearby_region(lat, lon, df_ref):
-    if df_ref.empty: return {}
-    cols_loc = ['loc_latitude', 'loc_longitude', 'latitude', 'longitude']
-    available = [c for c in cols_loc if c in df_ref.columns]
-    if len(available) < 2: return {}
-    df_valid = df_ref.dropna(subset=available[:2])
-    if df_valid.empty: return {}
-    idx = np.argmin(haversine_vectorized(lat, lon, df_valid[available[0]].values, df_valid[available[1]].values))
-    row = df_valid.iloc[idx]
-    return {"Region": row.get("loc_region", "N/A"), "City": row.get("loc_city", "N/A")}
 
 def render_kpi_card(title, value):
     st.markdown(f'''
@@ -52,7 +42,7 @@ def apply_chart_theme(chart, title=None):
 
 PALETTE = ["#6366f1", "#8b5cf6", "#3b82f6", "#f59e0b", "#06b6d4", "#10b981", "#ec4899"]
 
-def render_chart(df, col_name, color, label, id_col=None, chart_type="bar"):
+def render_chart(df, col_name, color, label, id_col=None, chart_type="bar", label_limit=100):
     if df.empty or col_name not in df.columns: return
     df_clean = df.dropna(subset=[col_name])
     if df_clean.empty: return
@@ -82,7 +72,7 @@ def render_chart(df, col_name, color, label, id_col=None, chart_type="bar"):
     if chart_type == "bar":
         sort_op = alt.EncodingSortField(field="c", order="descending")
         base = alt.Chart(data).encode(
-            y=alt.Y(f"{col_name}:N", sort=sort_op, title=None, axis=alt.Axis(labelLimit=100, minExtent=100)),
+            y=alt.Y(f"{col_name}:N", sort=sort_op, title=None, axis=alt.Axis(labelLimit=label_limit, minExtent=label_limit)),
             x=alt.X("c:Q", axis=None, scale=x_scale)
         )
         bars = base.mark_bar(color=color, cornerRadiusEnd=3)
@@ -94,7 +84,7 @@ def render_chart(df, col_name, color, label, id_col=None, chart_type="bar"):
     else:
         sort_op = alt.EncodingSortField(field="c", order="descending")
         base = alt.Chart(data).encode(
-            x=alt.X(f"{col_name}:N", sort=sort_op, title=None, axis=alt.Axis(labelLimit=100, minExtent=100)),
+            x=alt.X(f"{col_name}:N", sort=sort_op, title=None, axis=alt.Axis(labelLimit=label_limit, minExtent=label_limit)),
             y=alt.Y("c:Q", axis=None, scale=y_scale)
         )
         bars = base.mark_bar(color=color, cornerRadiusTopLeft=3, cornerRadiusTopRight=3)
@@ -113,15 +103,15 @@ def render_chart(df, col_name, color, label, id_col=None, chart_type="bar"):
 # --- DASHBOARDS ---
 def render_member_dashboard(df_portfolio):
     if df_portfolio.empty: return
-    st.markdown("<h2 style='text-align: center; margin-top: 0; margin-bottom: 5px; padding-bottom: 0;'>Portfolio Dashboard</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; margin-top: 0; margin-bottom: 5px; padding-bottom: 0;'>Users Dashboard</h2>", unsafe_allow_html=True)
     cid = 'user_id' if 'user_id' in df_portfolio.columns else 'member_id'
     total = df_portfolio[cid].nunique() if cid in df_portfolio.columns else len(df_portfolio)
     
     k1, k2, k3, k4 = st.columns(4)
-    with k1: render_kpi_card("Total Portfolio", f"{total:,}")
+    with k1: render_kpi_card("Total Users", f"{total:,}")
     with k2: render_kpi_card("Core Region", df_portfolio["loc_region"].value_counts().index[0] if "loc_region" in df_portfolio.columns and not df_portfolio["loc_region"].empty else "-")
-    with k3: render_kpi_card("Main Product", df_portfolio["contract_product"].value_counts().index[0] if "contract_product" in df_portfolio.columns and not df_portfolio["contract_product"].empty else "-")
-    with k4: render_kpi_card("Major Status", df_portfolio["contract_status"].value_counts().index[0] if "contract_status" in df_portfolio.columns and not df_portfolio["contract_status"].empty else "-")
+    with k3: render_kpi_card("Main Product", df_portfolio["user_product"].value_counts().index[0] if "user_product" in df_portfolio.columns and not df_portfolio["user_product"].empty else "-")
+    with k4: render_kpi_card("Major Status", df_portfolio["user_status"].value_counts().index[0] if "user_status" in df_portfolio.columns and not df_portfolio["user_status"].empty else "-")
     
     st.markdown('<hr class="dashboard-divider">', unsafe_allow_html=True)
 
@@ -132,9 +122,9 @@ def render_member_dashboard(df_portfolio):
     with c3: render_chart(df_portfolio, "loc_city", PALETTE[2], "City", cid)
     
     c4, c5, c6 = st.columns(3)
-    with c4: render_chart(df_portfolio, "contract_type", PALETTE[3], "Type", cid)
-    with c5: render_chart(df_portfolio, "contract_status", PALETTE[4], "Status", cid)
-    with c6: render_chart(df_portfolio, "contract_product", PALETTE[5], "Product", cid)
+    with c4: render_chart(df_portfolio, "user_type", PALETTE[3], "Type", cid)
+    with c5: render_chart(df_portfolio, "user_status", PALETTE[4], "Status", cid)
+    with c6: render_chart(df_portfolio, "user_product", PALETTE[5], "Product", cid)
     
     c7, c8, c9 = st.columns(3)
     with c7: render_chart(df_portfolio, "user_age_group", PALETTE[6], "Age Group", cid)
@@ -147,7 +137,7 @@ def render_provider_dashboard(df_providers):
     with k1: render_kpi_card("Total Providers", f"{len(df_providers):,}")
     with k2: render_kpi_card("Core Region", df_providers["loc_region"].value_counts().index[0] if "loc_region" in df_providers.columns and not df_providers["loc_region"].empty else "-")
     with k3: render_kpi_card("Main Type", df_providers["prov_type"].value_counts().index[0] if "prov_type" in df_providers.columns and not df_providers["prov_type"].empty else "-")
-    with k4: render_kpi_card("Major Status", df_providers["contract_status"].value_counts().index[0] if "contract_status" in df_providers.columns and not df_providers["contract_status"].empty else "-")
+    with k4: render_kpi_card("Major Status", df_providers["prov_status"].value_counts().index[0] if "prov_status" in df_providers.columns and not df_providers["prov_status"].empty else "-")
     
     st.markdown('<hr class="dashboard-divider">', unsafe_allow_html=True)
 
@@ -159,9 +149,9 @@ def render_provider_dashboard(df_providers):
     
     c4, c5, c6 = st.columns(3)
     with c4: render_chart(df_providers, "prov_type", PALETTE[3], "Type")
-    with c5: render_chart(df_providers, "contract_status", PALETTE[4], "Status")
+    with c5: render_chart(df_providers, "prov_status", PALETTE[4], "Status")
     
     # Bottom Detailed Detail
     if "prov_name" in df_providers.columns:
         st.markdown('<hr class="dashboard-divider">', unsafe_allow_html=True)
-        render_chart(df_providers, "prov_name", "#6366f1", "Providers", chart_type="bar")
+        render_chart(df_providers, "prov_name", "#f97316", "Providers", chart_type="bar", label_limit=250)

@@ -15,6 +15,21 @@ def haversine_vectorized(lat1, lon1, lat2_array, lon2_array):
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
     return R * c
 
+def identify_nearby_region(lat, lon, df_ref):
+    if df_ref.empty: return {}
+    cols_loc = ['loc_latitude', 'loc_longitude', 'latitude', 'longitude']
+    available = [c for c in cols_loc if c in df_ref.columns]
+    if len(available) < 2: return {}
+    df_valid = df_ref.dropna(subset=available[:2])
+    if df_valid.empty: return {}
+    idx = np.argmin(haversine_vectorized(lat, lon, df_valid[available[0]].values, df_valid[available[1]].values))
+    row = df_valid.iloc[idx]
+    return {
+        "loc_region": row.get("loc_region", "N/A"), 
+        "loc_city": row.get("loc_city", "N/A"),
+        "loc_state": row.get("loc_state", "N/A")
+    }
+
 def find_optimal_point(df_target, radius_km, df_providers=None, count_unique=True, max_candidates=1000, grid_size_fine=25):
     if df_target.empty or 'loc_latitude' not in df_target.columns or 'loc_longitude' not in df_target.columns:
         return None, None
