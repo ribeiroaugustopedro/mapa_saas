@@ -106,15 +106,13 @@ def render_ai_advisor(df_members, df_providers):
         }
         /* Styling the Chat Input area to match header */
         .stChatInput {
-            bottom: 20px !important;
             padding: 0 !important;
         }
         .stChatInput > div {
             border: 1px solid #475569 !important;
             border-radius: 12px !important;
             background: #0f172a !important;
-            padding: 12px 16px !important;
-            min-height: 55px !important;
+            padding: 8px 12px !important;
         }
         .stChatInput textarea {
             color: #f8fafc !important;
@@ -131,8 +129,8 @@ def render_ai_advisor(df_members, df_providers):
         }
         /* Spacing for messages so they don't hide behind input */
         .chat-scroll-area {
-            margin-bottom: 110px;
-            margin-top: -10px;
+            margin-bottom: 20px;
+            margin-top: 10px;
         }
         </style>
         <div class="ai-terminal-container">
@@ -148,25 +146,22 @@ def render_ai_advisor(df_members, df_providers):
     st.markdown('<hr style="margin: 20px 0 10px 0; border: none; border-top: 1px solid #334155; opacity: 0.5;">', unsafe_allow_html=True)
     st.markdown('<div class="quick-action-label">Quick Actions</div>', unsafe_allow_html=True)
     
-    c1, c2, c3 = st.columns(3)
-    
     auto_prompt = None
-    with c1:
-        if st.button("Analyze Gaps", use_container_width=True):
-            auto_prompt = "Identify the major geographical gaps in the current provider coverage."
-    with c2:
-        if st.button("Optimize Density", use_container_width=True):
-            auto_prompt = "Analyze the user-to-provider density and identify underserved regions."
-    with c3:
-        if st.button("Clear History", use_container_width=True):
-            st.session_state.ai_chat_history = []
-            st.rerun()
+    
+    # Vertically stacked buttons for better fit in sidebar
+    if st.button("Analyze Gaps", use_container_width=True):
+        auto_prompt = "Identify the major geographical gaps in the current provider coverage."
+    if st.button("Optimize Density", use_container_width=True):
+        auto_prompt = "Analyze the user-to-provider density and identify underserved regions."
+    if st.button("Clear History", use_container_width=True):
+        st.session_state.ai_chat_history = []
+        st.rerun()
 
     # Secondary demarcation
     st.markdown('<hr style="margin: 15px 0 10px 0; border: none; border-top: 1px solid #334155; opacity: 0.5;">', unsafe_allow_html=True)
 
     # Chat history pushed flush to controls
-    st.markdown('<div style="margin-top: -30px; margin-bottom: 60px;">', unsafe_allow_html=True)
+    st.markdown('<div class="chat-scroll-area">', unsafe_allow_html=True)
     for chat in st.session_state.ai_chat_history:
         with st.chat_message(chat["role"]):
             st.markdown(f'<div style="font-family: \'Inter\', sans-serif; font-size: 0.9rem; line-height: 1.5; color: #f8fafc;">{chat["content"]}</div>', unsafe_allow_html=True)
