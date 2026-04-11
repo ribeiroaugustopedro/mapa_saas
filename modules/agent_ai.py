@@ -109,11 +109,12 @@ def render_ai_advisor(df_members, df_providers):
             padding: 0 !important;
         }
         .stChatInput > div {
+            width: 92% !important;
+            margin: 0 auto !important;
             border: 1px solid #475569 !important;
             border-radius: 12px !important;
             background: #0f172a !important;
             padding: 8px 12px !important;
-            margin-right: 15px !important;
         }
         .stChatInput textarea {
             color: #f8fafc !important;
