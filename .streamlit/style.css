@@ -63,6 +63,11 @@ button,
     background-color: #0d1117 !important;
 }
 
+[data-testid="stSidebar"] {
+    min-width: 380px !important;
+    max-width: 380px !important;
+}
+
 /* Titles: Centered & Minimal */
 h1,
 h2,
@@ -183,6 +188,7 @@ h2,
     border-radius: 4px !important;
     font-weight: 700 !important;
     position: relative !important;
+    white-space: nowrap !important;
 }
 
 .stButton>button::after {
