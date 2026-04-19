@@ -170,6 +170,11 @@ def render_ai_advisor(df_members, df_providers):
             margin-top: auto !important;
             margin-bottom: auto !important;
         }
+        /* Minify Font in Segmented Control */
+        div[data-testid="stSegmentedControl"] button p {
+            font-size: 0.65rem !important;
+            font-weight: 600 !important;
+        }
         /* Spacing for messages so they don't hide behind input */
         .chat-scroll-area {
             margin-bottom: 20px;
@@ -186,26 +191,36 @@ def render_ai_advisor(df_members, df_providers):
 
     # Provider Selection
     st.markdown('<div class="quick-action-label">Engine Control</div>', unsafe_allow_html=True)
-    _, col_mid, _ = st.columns([2, 5, 2])
-    with col_mid:
-        st.segmented_control(
-            "Intelligence Provider", 
-            options=["Auto", "Gemini", "Groq"], 
-            key="ai_provider",
-            label_visibility="collapsed"
-        )
+    st.segmented_control(
+        "Intelligence Provider", 
+        options=["Auto", "Gemini", "Groq"], 
+        key="ai_provider",
+        label_visibility="collapsed"
+    )
 
     # Structural Demarcation
     st.markdown('<div class="quick-action-label">Analysis Presets</div>', unsafe_allow_html=True)
     
+    # Dynamic Suggestions
+    suggestions = [
+        "Identify geographical gaps in provider coverage.",
+        "Analyze user-to-provider density by region.",
+        "Suggest 3 strategic locations for new network hubs.",
+        "List providers with less than 50% coverage efficiency.",
+        "Identify regions with high user demand but low provider count."
+    ]
+    if "suggestion_idx" not in st.session_state: st.session_state.suggestion_idx = 0
+    
     auto_prompt = None
-    if st.button("Analyze Gaps", use_container_width=True):
-        auto_prompt = "Identify the major geographical gaps in the current provider coverage."
-    if st.button("Optimize Density", use_container_width=True):
-        auto_prompt = "Analyze the user-to-provider density and identify underserved regions."
-    if st.button("Clear Cache", use_container_width=True):
-        st.session_state.ai_chat_history = []
-        st.rerun()
+    col_btn, _ = st.columns([1, 1])
+    with col_btn:
+        if st.button("Suggestion", use_container_width=True):
+            auto_prompt = suggestions[st.session_state.suggestion_idx]
+            st.session_state.suggestion_idx = (st.session_state.suggestion_idx + 1) % len(suggestions)
+        
+        if st.button("Clear Cache", use_container_width=True):
+            st.session_state.ai_chat_history = []
+            st.rerun()
 
     # Chat history area
     st.markdown('<div class="chat-scroll-area">', unsafe_allow_html=True)
@@ -223,7 +238,7 @@ def render_ai_advisor(df_members, df_providers):
         st.session_state.ai_chat_history.append({"role": "user", "content": prompt})
 
         with st.chat_message("assistant"):
-            with st.spinner("Processing Topology..."):
+            with st.spinner("Thinking..."):
                 summary = generate_data_summary(df_providers, df_members)
                 response = ask_agent(prompt, summary, st.session_state.ai_chat_history, provider_choice=st.session_state["ai_provider"])
                 st.markdown(f'<div style="font-family: \'Inter\', sans-serif; font-size: 0.9rem; line-height: 1.5; color: #f8fafc;">{response}</div>', unsafe_allow_html=True)
