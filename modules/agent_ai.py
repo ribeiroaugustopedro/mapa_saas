@@ -3,60 +3,95 @@ import streamlit as st
 import os
 import time
 from google import genai
+from groq import Groq # Fallback provider
 import warnings
 
 # Suppress the legacy FutureWarning
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-def ask_agent(user_question, context_summary, history=[]):
-    # Support for multiple keys to rotate and avoid quotas
-    api_keys = []
-    # Primary key
+def ask_agent(user_question, context_summary, history=[], provider_choice="Auto"):
+    # --- GEMINI CONFIG ---
+    gemini_keys = []
     pk = st.secrets.get("gemini", {}).get("api_key") or os.getenv("GEMINI_API_KEY")
-    if pk: api_keys.append(pk)
-    
-    # Discovery of additional keys (GEMINI_API_KEY_1, _2, etc)
+    if pk: gemini_keys.append(pk)
     for i in range(1, 5):
         key = st.secrets.get("gemini", {}).get(f"api_key_{i}") or os.getenv(f"GEMINI_API_KEY_{i}")
-        if key: api_keys.append(key)
-        
-    if not api_keys: return "API Configuration Missing. Please provide a GEMINI_API_KEY."
-    
-    priority_models = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+        if key: gemini_keys.append(key)
+
+    # --- GROQ CONFIG ---
+    groq_keys = []
+    gk = st.secrets.get("groq", {}).get("api_key") or os.getenv("GROQ_API_KEY")
+    if gk: groq_keys.append(gk)
+    for i in range(1, 3):
+        key = st.secrets.get("groq", {}).get(f"api_key_{i}") or os.getenv(f"GROQ_API_KEY_{i}")
+        if key: groq_keys.append(key)
+
     last_err_msg = ""
     
-    # Double rotation: Keys then Models
-    for api_key in api_keys:
-        try:
-            client = genai.Client(api_key=api_key)
-            for model_name in priority_models:
-                try:
-                    # Defensive: handle potential naming prefix differences
-                    m_id = model_name if "models/" in model_name else f"models/{model_name}"
-                    response = client.models.generate_content(
-                        model=m_id,
-                        contents=f"Context: {context_summary}\n\nQuestion: {user_question}"
-                    )
-                    if response.text:
-                        st.session_state["active_model"] = model_name.replace("-", " ").title()
-                        return response.text
-                except Exception as e:
-                    last_err_msg = str(e)
-                    if "404" in last_err_msg: continue # Try next model
-                    if any(x in last_err_msg.upper() for x in ["429", "503", "QUOTA", "LIMIT"]):
-                        continue
-                    break # Critical error for this key
-        except: continue
-                    
-    return f"Strategic Advisory at capacity. (Last error: {last_err_msg[:100]})"
+    # Construct history string
+    history_context = ""
+    if history:
+        history_context = "Conversation History:\n" + "\n".join([f"{m['role'].upper()}: {m['content']}" for m in history[-5:]]) + "\n\n"
+
+    prompt_full = f"{history_context}Context: {context_summary}\n\nQuestion: {user_question}"
+
+    # PHASE 1: GEMINI
+    if provider_choice in ["Auto", "Gemini"]:
+        priority_gemini_models = ["gemini-2.0-flash", "gemini-2.0-flash-exp", "gemini-2.0-flash-lite-preview-02-05"]
+        for api_key in gemini_keys:
+            try:
+                client = genai.Client(api_key=api_key)
+                for model_name in priority_gemini_models:
+                    try:
+                        m_id = model_name if "models/" in model_name else f"models/{model_name}"
+                        response = client.models.generate_content(model=m_id, contents=prompt_full)
+                        if response.text:
+                            st.session_state["active_model"] = model_name.replace("-", " ").title()
+                            return response.text
+                    except Exception as e:
+                        last_err_msg = f"Gemini Error ({model_name}): {str(e)}"
+                        if any(x in last_err_msg.upper() for x in ["429", "QUOTA", "LIMIT", "TOO MANY REQUESTS"]):
+                            continue 
+                        break
+            except Exception as e:
+                last_err_msg = f"Gemini Init Error: {str(e)}"
+                continue
+
+    # PHASE 2: GROQ
+    if provider_choice in ["Auto", "Groq"]:
+        priority_groq_models = ["llama-3.3-70b-versatile", "mixtral-8x7b-32768", "llama3-8b-8192"]
+        for api_key in groq_keys:
+            try:
+                client = Groq(api_key=api_key)
+                for model_name in priority_groq_models:
+                    try:
+                        messages = [{"role": "system", "content": f"You are a Network Planning Assistant. Context: {context_summary}"}]
+                        for msg in history[-5:]: messages.append({"role": msg["role"], "content": msg["content"]})
+                        messages.append({"role": "user", "content": user_question})
+
+                        chat_completion = client.chat.completions.create(messages=messages, model=model_name)
+                        if chat_completion.choices[0].message.content:
+                            st.session_state["active_model"] = f"Groq {model_name.split('-')[0].title()}"
+                            return chat_completion.choices[0].message.content
+                    except Exception as e:
+                        last_err_msg = f"Groq Error ({model_name}): {str(e)}"
+                        if "429" in last_err_msg: continue
+                        break
+            except: continue
+
+    if not gemini_keys and not groq_keys:
+        return "Configuration Error: No API keys found."
+
+    return f"Intelligence Service at capacity. (Last error: {last_err_msg[:100]})"
 
 def generate_data_summary(df_providers, df_members):
     return f"Network State: {len(df_providers)} Providers. Active Users: {len(df_members):,} users."
 
 def render_ai_advisor(df_members, df_providers):
-    # Initialize State at the very beginning to avoid KeyErrors
+    # Initialize State
     if "ai_chat_history" not in st.session_state: st.session_state.ai_chat_history = []
     if "active_model" not in st.session_state: st.session_state["active_model"] = "Gemini 2.0 Flash"
+    if "ai_provider" not in st.session_state: st.session_state["ai_provider"] = "Auto"
     
     # CSS for a premium AI Terminal feel with Rainbow Accent
     st.markdown("""
@@ -65,7 +100,7 @@ def render_ai_advisor(df_members, df_providers):
             border: 1px solid #e2e8f0;
             border-radius: 12px;
             overflow: hidden;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             background: #ffffff;
         }
         .ai-terminal-header {
@@ -104,6 +139,18 @@ def render_ai_advisor(df_members, df_providers):
             margin-bottom: 8px;
             margin-top: 25px;
         }
+        /* Minimalist Buttons */
+        .stButton > button {
+            font-size: 0.75rem !important;
+            padding: 4px 12px !important;
+            min-height: 0px !important;
+        }
+        /* Force Centering of Segmented Control locally */
+        div[data-testid="stSegmentedControl"] > div[role="radiogroup"] {
+            justify-content: center !important;
+            margin: 0 auto !important;
+            display: flex !important;
+        }
         /* Styling the Chat Input area to match header */
         .stChatInput {
             padding: 0 !important;
@@ -137,39 +184,43 @@ def render_ai_advisor(df_members, df_providers):
         </style>
         <div class="ai-terminal-container">
             <div class="ai-terminal-header">
-                <div class="ai-title">Network Intelligence</div>
-                <div class="ai-subtitle">""" + st.session_state["active_model"].upper() + """ Analysis</div>
+                <div class="ai-title" style="text-align: center;">Network Intelligence</div>
                 <div class="rainbow-line"></div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
+    # Provider Selection
+    st.markdown('<div class="quick-action-label" style="text-align: center;">Engine Control</div>', unsafe_allow_html=True)
+    _, col_mid, _ = st.columns([1, 4, 1])
+    with col_mid:
+        st.segmented_control(
+            "Intelligence Provider", 
+            options=["Auto", "Gemini", "Groq"], 
+            key="ai_provider",
+            label_visibility="collapsed"
+        )
+
     # Structural Demarcation
-    st.markdown('<hr style="margin: 20px 0 10px 0; border: none; border-top: 1px solid #334155; opacity: 0.5;">', unsafe_allow_html=True)
-    st.markdown('<div class="quick-action-label">Quick Actions</div>', unsafe_allow_html=True)
+    st.markdown('<div class="quick-action-label">Analysis Presets</div>', unsafe_allow_html=True)
     
     auto_prompt = None
-    
-    # Vertically stacked buttons for better fit in sidebar
     if st.button("Analyze Gaps", use_container_width=True):
         auto_prompt = "Identify the major geographical gaps in the current provider coverage."
     if st.button("Optimize Density", use_container_width=True):
         auto_prompt = "Analyze the user-to-provider density and identify underserved regions."
-    if st.button("Clear History", use_container_width=True):
+    if st.button("Clear Cache", use_container_width=True):
         st.session_state.ai_chat_history = []
         st.rerun()
 
-    # Secondary demarcation
-    st.markdown('<hr style="margin: 15px 0 10px 0; border: none; border-top: 1px solid #334155; opacity: 0.5;">', unsafe_allow_html=True)
-
-    # Chat history pushed flush to controls
+    # Chat history area
     st.markdown('<div class="chat-scroll-area">', unsafe_allow_html=True)
     for chat in st.session_state.ai_chat_history:
         with st.chat_message(chat["role"]):
             st.markdown(f'<div style="font-family: \'Inter\', sans-serif; font-size: 0.9rem; line-height: 1.5; color: #f8fafc;">{chat["content"]}</div>', unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-    # Process prompt (either from button or chat_input)
+    # Process prompt
     prompt = st.chat_input("Analysis Request...") or auto_prompt
     
     if prompt:
@@ -180,7 +231,7 @@ def render_ai_advisor(df_members, df_providers):
         with st.chat_message("assistant"):
             with st.spinner("Processing Topology..."):
                 summary = generate_data_summary(df_providers, df_members)
-                response = ask_agent(prompt, summary, st.session_state.ai_chat_history)
+                response = ask_agent(prompt, summary, st.session_state.ai_chat_history, provider_choice=st.session_state["ai_provider"])
                 st.markdown(f'<div style="font-family: \'Inter\', sans-serif; font-size: 0.9rem; line-height: 1.5; color: #f8fafc;">{response}</div>', unsafe_allow_html=True)
         st.session_state.ai_chat_history.append({"role": "assistant", "content": response})
-        if auto_prompt: st.rerun() # Ensure buttons clear correctly
+        if auto_prompt: st.rerun()

@@ -26,8 +26,8 @@ if "cluster_markers" not in st.session_state: st.session_state["cluster_markers"
 if "manual_pin_enabled" not in st.session_state: st.session_state["manual_pin_enabled"] = False
 
 # 2. Data Load & Pre-process
-df_portfolio, df_providers, sidebar_config, config_portfolio = load_all_data()
-df_portfolio_filtered = df_portfolio.copy()
+df_users, df_providers, sidebar_config, config_portfolio = load_all_data()
+df_users_filtered = df_users.copy()
 df_providers_filtered = df_providers.copy()
 
 # 3. Sidebar UI
@@ -100,7 +100,7 @@ with tab_filtros:
         df_providers_filtered = generate_filters(df_providers_filtered, st, sidebar_config, key_prefix="sidebar_tab")
     
     with st.expander("USERS FILTERS", expanded=False):
-        df_portfolio_filtered = generate_filters(df_portfolio_filtered, st, config_portfolio, key_prefix="expander_users_auto")
+        df_users_filtered = generate_filters(df_users_filtered, st, config_portfolio, key_prefix="expander_users_auto")
 
 # 4. Filter Post-Processing
 if st.session_state.get("busca_prestador"):
@@ -109,10 +109,10 @@ if st.session_state.get("busca_prestador"):
 
 # 4.5 Simulation Processing
 if st.session_state.get("trigger_simulation"):
-    if not df_portfolio_filtered.empty:
+    if not df_users_filtered.empty:
         st.session_state["simulation_result"] = {
-            "lat": df_portfolio_filtered["loc_latitude"].mean(), 
-            "lon": df_portfolio_filtered["loc_longitude"].mean()
+            "lat": df_users_filtered["loc_latitude"].mean(), 
+            "lon": df_users_filtered["loc_longitude"].mean()
         }
     st.session_state["trigger_simulation"] = False
     st.rerun()
@@ -127,7 +127,7 @@ with t_map:
     mapa = create_base_map(st.session_state.get("map_type", "OpenStreetMap"), locked=st.session_state.get("locked_mode", False), minimalist=manual_on)
     
     apply_layers(
-        mapa, df_providers_filtered, df_portfolio_filtered, 
+        mapa, df_providers_filtered, df_users_filtered, 
         show_h="Heatmap" in st.session_state.get("map_modes", []), 
         show_m=st.session_state.get("show_provider_markers", True), 
         show_r="Coverage Radius" in st.session_state.get("map_modes", []), 
@@ -147,10 +147,10 @@ with t_map:
         render_map_stable(mapa)
 
 with t_portfolio:
-    render_member_dashboard(df_portfolio_filtered)
+    render_member_dashboard(df_users_filtered)
 
 with t_providers:
     render_provider_dashboard(df_providers_filtered)
 
 with tab_ai:
-    render_ai_advisor(df_portfolio_filtered, df_providers_filtered)
+    render_ai_advisor(df_users_filtered, df_providers_filtered)
