@@ -37,14 +37,14 @@ def ask_agent(user_question, context_summary, history=[], provider_choice="Auto"
 
     # PHASE 1: GEMINI
     if provider_choice in ["Auto", "Gemini"]:
-        priority_gemini_models = ["gemini-2.0-flash", "gemini-2.0-flash-exp", "gemini-2.0-flash-lite-preview-02-05"]
+        priority_gemini_models = ["gemini-2.0-flash"]
         for api_key in gemini_keys:
             try:
                 client = genai.Client(api_key=api_key)
                 for model_name in priority_gemini_models:
                     try:
-                        m_id = model_name if "models/" in model_name else f"models/{model_name}"
-                        response = client.models.generate_content(model=m_id, contents=prompt_full)
+                        # New SDK (google-genai) does NOT use 'models/' prefix
+                        response = client.models.generate_content(model=model_name, contents=prompt_full)
                         if response.text:
                             st.session_state["active_model"] = model_name.replace("-", " ").title()
                             return response.text
@@ -145,12 +145,6 @@ def render_ai_advisor(df_members, df_providers):
             padding: 4px 12px !important;
             min-height: 0px !important;
         }
-        /* Force Centering of Segmented Control locally */
-        div[data-testid="stSegmentedControl"] > div[role="radiogroup"] {
-            justify-content: center !important;
-            margin: 0 auto !important;
-            display: flex !important;
-        }
         /* Styling the Chat Input area to match header */
         .stChatInput {
             padding: 0 !important;
@@ -191,8 +185,8 @@ def render_ai_advisor(df_members, df_providers):
     """, unsafe_allow_html=True)
 
     # Provider Selection
-    st.markdown('<div class="quick-action-label" style="text-align: center;">Engine Control</div>', unsafe_allow_html=True)
-    _, col_mid, _ = st.columns([1, 4, 1])
+    st.markdown('<div class="quick-action-label">Engine Control</div>', unsafe_allow_html=True)
+    _, col_mid, _ = st.columns([2, 5, 2])
     with col_mid:
         st.segmented_control(
             "Intelligence Provider", 
