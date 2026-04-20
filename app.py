@@ -1,6 +1,8 @@
+import streamlit as st
+st.set_page_config(page_title="Network Planner | Intelligence Terminal", layout="wide", initial_sidebar_state="expanded")
+
 import pandas as pd
 import numpy as np
-import streamlit as st
 import folium
 from folium import LayerControl
 from folium.plugins import HeatMap, MarkerCluster
@@ -10,7 +12,6 @@ from modules.map_builder import create_base_map, add_heatmap, add_provider_marke
 from modules.dashboard import render_member_dashboard, render_provider_dashboard, calculate_full_point_metrics
 from modules.agent_ai import render_ai_advisor
 
-st.set_page_config(page_title="Network Planner | Intelligence Terminal", layout="wide", initial_sidebar_state="expanded")
 
 with open(".streamlit/style.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -142,7 +143,7 @@ with t_map:
         if res and res.get("last_clicked"):
             if res["last_clicked"] != st.session_state.get("ping_location"):
                 st.session_state["ping_location"] = res["last_clicked"]
-                st.rerun()
+                # Removed redundant st.rerun() as st-folium already triggers one
     else:
         render_map_stable(mapa)
 
